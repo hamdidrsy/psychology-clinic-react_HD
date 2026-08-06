@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider     = "postgresql"
+  relationMode = "foreignKeys"
+}
+
+enum AdminRole {
+  ADMIN
+  EDITOR
+}
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AppointmentStatus {
+  NEW
+  CONTACTED
+  SCHEDULED
+  CLOSED
+  CANCELLED_OR_UNSUITABLE
+}
+
+enum ContactMethod {
+  EMAIL
+  PHONE
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model AdminUser {
+  id                String                     @id @default(uuid()) @db.Uuid
+  email             String                     @unique @db.VarChar(254)
+  passwordHash      String                     @db.VarChar(255)
+  displayName       String                     @db.VarChar(120)
+  role              AdminRole                  @default(ADMIN)
+  isActive          Boolean                    @default(true)
+  lastLoginAt       DateTime?                  @db.Timestamptz(3)
+  passwordChangedAt DateTime?                  @db.Timestamptz(3)
+  createdAt         DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime                   @updatedAt @db.Timestamptz(3)
+  articles          Article[]
+  auditLogs         AuditLog[]
+  statusChanges     AppointmentStatusHistory[]
+
+  @@index([isActive, role])
+}
+
+model ArticleCategory {
+  id          String    @id @default(uuid()) @db.Uuid
+  name        String    @db.VarChar(100)
+  slug        String    @unique @db.VarChar(120)
+  description String?   @db.VarChar(320)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
+  articles    Article[]
+}
+
+model Article {
+  id              String                @id @default(uuid()) @db.Uuid
+  title           String                @db.VarChar(180)
+  slug            String                @unique @db.VarChar(200)
+  excerpt         String                @db.VarChar(500)
+  content         String                @db.Text
+  coverImageUrl   String?               @db.VarChar(2048)
+  coverImageAlt   String?               @db.VarChar(240)
+  metaTitle       String?               @db.VarChar(70)
+  metaDescription String?               @db.VarChar(170)
+  status          ArticleStatus         @default(DRAFT)
+  publishedAt     DateTime?             @db.Timestamptz(3)
+  archivedAt      DateTime?             @db.Timestamptz(3)
+  authorId        String                @db.Uuid
+  categoryId      String?               @db.Uuid
+  createdAt       DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime              @updatedAt @db.Timestamptz(3)
+  author          AdminUser             @relation(fields: [authorId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  category        ArticleCategory?      @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  slugRedirects   ArticleSlugRedirect[]
+
+  @@index([authorId])
+  @@index([categoryId])
+  @@index([status, publishedAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+}
+
+model ArticleSlugRedirect {
+  id        String   @id @default(uuid()) @db.Uuid
+  oldSlug   String   @unique @db.VarChar(200)
+  articleId String   @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([articleId])
+}
+
+model Service {
+  id                  String               @id @default(uuid()) @db.Uuid
+  name                String               @db.VarChar(140)
+  slug                String               @unique @db.VarChar(160)
+  shortDescription    String               @db.VarChar(320)
+  isPublished         Boolean              @default(false)
+  displayOrder        Int                  @default(0)
+  createdAt           DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime             @updatedAt @db.Timestamptz(3)
+  appointmentRequests AppointmentRequest[]
+
+  @@index([isPublished, displayOrder])
+}
+
+model AppointmentRequest {
+  id                     String                     @id @default(uuid()) @db.Uuid
+  referenceCode          String                     @unique @db.VarChar(24)
+  fullName               String                     @db.VarChar(120)
+  email                  String?                    @db.VarChar(254)
+  phone                  String?                    @db.VarChar(32)
+  preferredContactMethod ContactMethod
+  preferredContactTime   String?                    @db.VarChar(80)
+  note                   String?                    @db.VarChar(1000)
+  status                 AppointmentStatus          @default(NEW)
+  privacyNoticeVersion   String                     @db.VarChar(32)
+  privacyAcknowledgedAt  DateTime                   @db.Timestamptz(3)
+  idempotencyKeyHash     String                     @unique @db.VarChar(64)
+  requestFingerprintHash String?                    @db.VarChar(64)
+  fingerprintExpiresAt   DateTime?                  @db.Timestamptz(3)
+  serviceId              String?                    @db.Uuid
+  createdAt              DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime                   @updatedAt @db.Timestamptz(3)
+  closedAt               DateTime?                  @db.Timestamptz(3)
+  retentionExpiresAt     DateTime                   @db.Timestamptz(3)
+  service                Service?                   @relation(fields: [serviceId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  notifications          AppointmentNotification[]
+  statusHistory          AppointmentStatusHistory[]
+
+  @@index([serviceId])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([retentionExpiresAt])
+  @@index([requestFingerprintHash, fingerprintExpiresAt])
+}
+
+model AppointmentStatusHistory {
+  id                   String             @id @default(uuid()) @db.Uuid
+  appointmentRequestId String             @db.Uuid
+  fromStatus           AppointmentStatus?
+  toStatus             AppointmentStatus
+  changedByAdminId     String?            @db.Uuid
+  operationalNote      String?            @db.VarChar(500)
+  createdAt            DateTime           @default(now()) @db.Timestamptz(3)
+  appointmentRequest   AppointmentRequest @relation(fields: [appointmentRequestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  changedByAdmin       AdminUser?         @relation(fields: [changedByAdminId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([appointmentRequestId, createdAt(sort: Desc)])
+  @@index([changedByAdminId])
+}
+
+model AppointmentNotification {
+  id                   String             @id @default(uuid()) @db.Uuid
+  appointmentRequestId String             @db.Uuid
+  status               NotificationStatus @default(PENDING)
+  providerMessageId    String?            @unique @db.VarChar(255)
+  attemptCount         Int                @default(0)
+  lastAttemptAt        DateTime?          @db.Timestamptz(3)
+  sentAt               DateTime?          @db.Timestamptz(3)
+  nextAttemptAt        DateTime?          @db.Timestamptz(3)
+  failureCode          String?            @db.VarChar(100)
+  createdAt            DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime           @updatedAt @db.Timestamptz(3)
+  appointmentRequest   AppointmentRequest @relation(fields: [appointmentRequestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([appointmentRequestId])
+  @@index([status, nextAttemptAt])
+}
+
+model AuditLog {
+  id           String     @id @default(uuid()) @db.Uuid
+  actorAdminId String?    @db.Uuid
+  action       String     @db.VarChar(100)
+  entityType   String     @db.VarChar(80)
+  entityId     String?    @db.VarChar(64)
+  metadata     Json?
+  requestId    String?    @db.VarChar(64)
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+  actorAdmin   AdminUser? @relation(fields: [actorAdminId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([actorAdminId, createdAt(sort: Desc)])
+  @@index([entityType, entityId, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+}
