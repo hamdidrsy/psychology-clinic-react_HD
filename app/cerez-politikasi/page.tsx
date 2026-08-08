@@ -1,13 +1,13 @@
-import type { Metadata } from "next";
-
 import { CookiePreferencesButton } from "@/components/cookie-preferences";
 import { LegalPage } from "@/components/legal-page";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Çerez Politikası",
   description:
-    "Sitedeki zorunlu depolama ve çerez tercihlerine ilişkin taslak politika.",
-};
+    "Sitedeki zorunlu depolama ve çerez tercihlerine ilişkin politika.",
+  path: "/cerez-politikasi",
+});
 
 export default function CookiePolicyPage() {
   return (

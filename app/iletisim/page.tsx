@@ -1,15 +1,15 @@
-import type { Metadata } from "next";
-
 import { AppointmentForm } from "@/components/appointment-form";
 import { ContentNotice } from "@/components/content-notice";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "İletişim ve Randevu Talebi",
   description: "Klinik iletişim bilgileri ve güvenli randevu talebi formu.",
-};
+  path: "/iletisim",
+});
 
 export default function ContactPage() {
   return (

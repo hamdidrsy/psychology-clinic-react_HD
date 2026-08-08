@@ -8,6 +8,7 @@ import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { articles, getService, services } from "@/lib/content";
+import { pageMetadata } from "@/lib/seo";
 
 type ServicePageProps = { params: Promise<{ slug: string }> };
 
@@ -19,8 +20,12 @@ export async function generateMetadata({
   params,
 }: ServicePageProps): Promise<Metadata> {
   const service = getService((await params).slug);
-  if (!service) return { title: "Hizmet bulunamadı" };
-  return { title: service.title, description: service.summary };
+  if (!service) return { title: "Hizmet bulunamadı", robots: { index: false } };
+  return pageMetadata({
+    title: service.title,
+    description: service.summary,
+    path: `/hizmetler/${service.slug}`,
+  });
 }
 
 export default async function ServiceDetailPage({ params }: ServicePageProps) {

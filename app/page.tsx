@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 
 import { ArticleCard } from "@/components/article-card";
@@ -9,12 +8,14 @@ import { Card } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { articles, faqs, services } from "@/lib/content";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Psikoloji Kliniği",
   description:
-    "Hasan Durusoy psikoloji kliniği için hizmet, makale ve randevu talebi bilgileri.",
-};
+    "Hasan Durusoy psikoloji kliniği için hizmet, makale ve güvenli randevu talebi bilgileri.",
+  path: "/",
+});
 
 export default function HomePage() {
   return (

@@ -9,6 +9,7 @@ import {
   articleFormValues,
   slugify,
 } from "@/lib/admin/article-schema";
+import { articles as staticArticles } from "@/lib/content";
 import { requireContentManager } from "@/server/auth/session";
 import { getDb } from "@/server/db";
 
@@ -21,6 +22,9 @@ async function uniqueSlug(base: string, articleId?: string) {
   const db = getDb();
   let candidate = base;
   for (let suffix = 2; suffix < 100; suffix += 1) {
+    const reservedByStaticContent = staticArticles.some(
+      (article) => article.slug === candidate,
+    );
     const [existing, oldRedirect] = await Promise.all([
       db.article.findFirst({
         where: {
@@ -34,7 +38,11 @@ async function uniqueSlug(base: string, articleId?: string) {
         select: { articleId: true },
       }),
     ]);
-    if (!existing && (!oldRedirect || oldRedirect.articleId === articleId))
+    if (
+      !reservedByStaticContent &&
+      !existing &&
+      (!oldRedirect || oldRedirect.articleId === articleId)
+    )
       return candidate;
     candidate = `${base}-${suffix}`;
   }

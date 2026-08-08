@@ -1,12 +1,11 @@
-import type { Metadata } from "next";
-
 import { LegalPage } from "@/components/legal-page";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "KVKK Aydınlatma Metni",
-  description:
-    "Kişisel verilerin işlenmesine ilişkin taslak aydınlatma yapısı.",
-};
+  description: "Kişisel verilerin işlenmesine ilişkin aydınlatma metni.",
+  path: "/kvkk-aydinlatma-metni",
+});
 
 export default function KvkkPage() {
   return (

@@ -1,5 +1,3 @@
-import type { Metadata } from "next";
-
 import { ContentNotice } from "@/components/content-notice";
 import { PageHeader } from "@/components/page-header";
 import { ServiceCard } from "@/components/service-card";
@@ -7,12 +5,14 @@ import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { services } from "@/lib/content";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Hizmetler",
   description:
-    "Psikoloji kliniğinin taslak görüşme ve değerlendirme hizmetlerini inceleyin.",
-};
+    "Psikoloji kliniğinin görüşme ve değerlendirme hizmetlerini inceleyin.",
+  path: "/hizmetler",
+});
 
 export default function ServicesPage() {
   return (

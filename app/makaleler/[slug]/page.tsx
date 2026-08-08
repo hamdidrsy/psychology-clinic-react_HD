@@ -1,14 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ContentNotice } from "@/components/content-notice";
+import { JsonLd } from "@/components/json-ld";
+import { MarkdownContent } from "@/components/markdown-content";
 import { ShareButton } from "@/components/share-button";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
 import { articles, getArticle, getService } from "@/lib/content";
 import { formatDate } from "@/lib/format-date";
+import { absoluteUrl, articleMetadata } from "@/lib/seo";
+import {
+  getPublishedArticleBySlug,
+  getPublishedRedirect,
+} from "@/server/articles/public";
 
 type ArticlePageProps = { params: Promise<{ slug: string }> };
 
@@ -19,19 +26,72 @@ export function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: ArticlePageProps): Promise<Metadata> {
-  const article = getArticle((await params).slug);
-  if (!article) return { title: "Makale bulunamadı" };
-  return { title: article.title, description: article.excerpt };
+  const slug = (await params).slug;
+  const article = getArticle(slug);
+  if (article) {
+    return articleMetadata({
+      title: article.title,
+      description: article.excerpt,
+      path: `/makaleler/${article.slug}`,
+      publishedTime: article.publishedAt,
+      modifiedTime: article.updatedAt,
+      author: "Hasan Durusoy",
+    });
+  }
+  const databaseArticle = await getPublishedArticleBySlug(slug);
+  if (!databaseArticle) {
+    const redirectRecord = await getPublishedRedirect(slug);
+    if (redirectRecord)
+      return { title: "Makale yönlendiriliyor", robots: { index: false } };
+    notFound();
+  }
+  const canonicalPath = databaseArticle.canonicalUrl ?? `/makaleler/${slug}`;
+  return articleMetadata({
+    title: databaseArticle.metaTitle ?? databaseArticle.title,
+    description: databaseArticle.metaDescription ?? databaseArticle.excerpt,
+    path: canonicalPath,
+    publishedTime: databaseArticle.publishedAt?.toISOString(),
+    modifiedTime: databaseArticle.updatedAt.toISOString(),
+    author: databaseArticle.author.displayName,
+    image:
+      databaseArticle.socialImageUrl ??
+      databaseArticle.coverImageUrl ??
+      undefined,
+  });
 }
 
 export default async function ArticleDetailPage({ params }: ArticlePageProps) {
-  const article = getArticle((await params).slug);
-  if (!article) notFound();
+  const slug = (await params).slug;
+  const article = getArticle(slug);
+  if (!article) {
+    const redirectRecord = await getPublishedRedirect(slug);
+    if (redirectRecord)
+      permanentRedirect(`/makaleler/${redirectRecord.article.slug}`);
+    const databaseArticle = await getPublishedArticleBySlug(slug);
+    if (!databaseArticle) notFound();
+    return <DatabaseArticle article={databaseArticle} />;
+  }
   const service = getService(article.relatedServiceSlug);
 
   return (
     <main>
       <article>
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: article.title,
+            description: article.excerpt,
+            datePublished: article.publishedAt,
+            dateModified: article.updatedAt,
+            mainEntityOfPage: absoluteUrl(`/makaleler/${article.slug}`),
+            author: {
+              "@type": "Person",
+              name: "Hasan Durusoy",
+              url: absoluteUrl("/hakkimda"),
+            },
+          }}
+        />
         <header className="page-hero">
           <Container className="max-w-5xl">
             <Breadcrumbs
@@ -122,6 +182,77 @@ export default async function ArticleDetailPage({ params }: ArticlePageProps) {
               Tüm makalelere dön
             </Link>
           </aside>
+        </Container>
+      </article>
+    </main>
+  );
+}
+
+type DatabaseArticle = NonNullable<
+  Awaited<ReturnType<typeof getPublishedArticleBySlug>>
+>;
+
+function DatabaseArticle({ article }: { article: DatabaseArticle }) {
+  const publishedAt = article.publishedAt ?? article.createdAt;
+  return (
+    <main>
+      <article>
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: article.title,
+            description: article.excerpt,
+            datePublished: publishedAt.toISOString(),
+            dateModified: article.updatedAt.toISOString(),
+            mainEntityOfPage: absoluteUrl(`/makaleler/${article.slug}`),
+            author: {
+              "@type": "Person",
+              name: article.author.displayName,
+              url: absoluteUrl("/hakkimda"),
+            },
+            ...(article.coverImageUrl
+              ? { image: [article.coverImageUrl] }
+              : {}),
+          }}
+        />
+        <header className="page-hero">
+          <Container className="max-w-5xl">
+            <Breadcrumbs
+              items={[
+                { label: "Ana sayfa", href: "/" },
+                { label: "Makaleler", href: "/makaleler" },
+                { label: article.title },
+              ]}
+            />
+            <p className="eyebrow">{article.category?.name ?? "Makale"}</p>
+            <h1 className="page-title">{article.title}</h1>
+            <p className="page-lead">{article.excerpt}</p>
+            <div className="text-ink-muted mt-7 flex flex-wrap gap-5 text-sm">
+              <span>Yazar: {article.author.displayName}</span>
+              <span>
+                Yayımlanma:{" "}
+                <time dateTime={publishedAt.toISOString()}>
+                  {formatDate(publishedAt)}
+                </time>
+              </span>
+              <span>
+                Güncellenme:{" "}
+                <time dateTime={article.updatedAt.toISOString()}>
+                  {formatDate(article.updatedAt)}
+                </time>
+              </span>
+            </div>
+          </Container>
+        </header>
+        <Container className="max-w-5xl py-10">
+          <ContentNotice />
+        </Container>
+        <Container className="max-w-3xl pb-20">
+          <MarkdownContent content={article.content} />
+          <div className="mt-10">
+            <ShareButton title={article.title} />
+          </div>
         </Container>
       </article>
     </main>

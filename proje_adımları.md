@@ -254,23 +254,23 @@
 
 ## 9. SEO ve keşfedilebilirlik
 
-- [ ] Anahtar kelime ve arama niyeti araştırması; etik sağlık iletişimi sınırlarında yapılır.
-- [ ] Her sayfa için benzersiz title, description ve H1 planlanır.
-- [ ] Next.js Metadata API ile statik/dinamik metadata uygulanır.
-- [ ] Canonical URL’ler tek bir production origin üzerinden üretilir.
-- [ ] Open Graph ve X/Twitter metadata/görselleri eklenir.
-- [ ] `robots.txt` hazırlanır; admin, auth, preview ve gereksiz yollar engellenir.
-- [ ] Dinamik `sitemap.xml`; yalnız canonical ve indexlenebilir URL’leri içerir.
-- [ ] Taslak, admin, sonuç/teşekkür ve filtre URL’leri `noindex` olur.
-- [ ] `Organization`/uygun profesyonel işletme, `Person`, `WebSite`, `BreadcrumbList`, `Article` ve görünür içerikle uyumlu `FAQPage` JSON-LD değerlendirilir.
-- [ ] Sağlık/meslek schema türleri yalnız doğrulanabilir bilgiyle ve Google kuralları gözetilerek seçilir.
-- [ ] JSON-LD güvenli serialize edilir ve Rich Results Test ile doğrulanır.
-- [ ] Breadcrumb ve anlamlı iç linkleme uygulanır.
-- [ ] Makalelerde yazar, yayın/güncellenme tarihi ve güvenilir kaynak kullanımı görünürdür.
-- [ ] 404, redirect, trailing slash ve eski slug politikaları uygulanır.
-- [ ] Görseller optimize edilir; açıklayıcı dosya adı ve alt metin kullanılır.
-- [ ] Search Console ve gerekirse Bing Webmaster doğrulaması planlanır.
-- [ ] Production sonrası sitemap gönderimi ve index kontrolü görevlendirilir.
+- [x] Anahtar kelime ve arama niyeti araştırması; etik sağlık iletişimi sınırlarında yapılır. — Hacimsiz nitel niyet haritası `docs/seo-strategy.md`; gerçek sorgu/şehir çalışması doğrulanmış kapsam ve Search Console verisi bekliyor.
+- [x] Her sayfa için benzersiz title, description ve H1 planlanır. — Statik sayfalar ile dinamik hizmet/makale metadata haritası uygulandı.
+- [x] Next.js Metadata API ile statik/dinamik metadata uygulanır.
+- [x] Canonical URL’ler tek bir production origin üzerinden üretilir. — Tek kaynak `NEXT_PUBLIC_SITE_URL`; production domain seçimi/yayın kontrolü bekliyor.
+- [x] Open Graph ve X/Twitter metadata/görselleri eklenir. — Kodla üretilen 1200×630 varsayılan görsel; makale özel görsel desteği.
+- [x] `robots.txt` hazırlanır; admin, auth, preview ve gereksiz yollar engellenir. — `/admin` engelli; admin layout ayrıca `noindex`.
+- [x] Dinamik `sitemap.xml`; yalnız canonical ve indexlenebilir URL’leri içerir. — Statik public rotalar ve yalnız `PUBLISHED` DB makaleleri.
+- [x] Taslak, admin, sonuç/teşekkür ve filtre URL’leri `noindex` olur. — Taslak/önizleme auth arkasında ve admin layout `noindex`; filtre URL’leri sitemap dışı/self-canonical değil.
+- [x] `Organization`/uygun profesyonel işletme, `Person`, `WebSite`, `BreadcrumbList`, `Article` ve görünür içerikle uyumlu `FAQPage` JSON-LD değerlendirilir. — `WebSite`, `BreadcrumbList`, `Article` uygulandı; Organization/klinik Person doğrulama beklediği, FAQ zengin sonucu uygun olmadığı için eklenmedi.
+- [x] Sağlık/meslek schema türleri yalnız doğrulanabilir bilgiyle ve Google kuralları gözetilerek seçilir. — Doğrulanmış unvan/adres olmadan sağlık veya LocalBusiness alt türü üretilmiyor.
+- [ ] JSON-LD güvenli serialize edilir ve Rich Results Test ile doğrulanır. — Güvenli serializer ve otomatik test tamam; canlı URL ile Google Rich Results Test bekliyor.
+- [x] Breadcrumb ve anlamlı iç linkleme uygulanır. — Görünür breadcrumb ile aynı `BreadcrumbList`; hizmet-makale ilişkileri mevcut.
+- [ ] Makalelerde yazar, yayın/güncellenme tarihi ve güvenilir kaynak kullanımı görünürdür. — Yazar ve tarihler görünür; taslak içeriklerin onaylı kaynakları bekleniyor.
+- [ ] 404, redirect, trailing slash ve eski slug politikaları uygulanır. — Trailing slash 308 ve eski DB slug 308 hazır; dinamik bilinmeyen slug Next.js streaming nedeniyle 404 UI/noindex yanında HTTP 200 başlatıyor.
+- [ ] Görseller optimize edilir; açıklayıcı dosya adı ve alt metin kullanılır. — Favicon/OG üretimi tamam; onaylı gerçek görseller ve manuel çıktı kontrolü bekleniyor.
+- [x] Search Console ve gerekirse Bing Webmaster doğrulaması planlanır. — Kurulum ve izleme adımları `docs/seo-strategy.md` içinde.
+- [ ] Production sonrası sitemap gönderimi ve index kontrolü görevlendirilir. — Production domain ve sorumlu ataması bekleniyor.
 
 ### Çıkış kriterleri
 

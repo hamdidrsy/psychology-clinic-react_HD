@@ -1,16 +1,16 @@
-import type { Metadata } from "next";
-
 import { ContentNotice } from "@/components/content-notice";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
 import { faqs } from "@/lib/content";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Sık Sorulan Sorular",
   description:
     "Randevu talebi, görüşmeler ve gizlilik hakkında sık sorulan sorular.",
-};
+  path: "/sik-sorulan-sorular",
+});
 
 export default function FaqPage() {
   return (

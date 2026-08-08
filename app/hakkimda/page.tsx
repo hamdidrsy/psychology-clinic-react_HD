@@ -1,17 +1,17 @@
-import type { Metadata } from "next";
-
 import { ContentNotice } from "@/components/content-notice";
 import { PageHeader } from "@/components/page-header";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Card } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Hakkımda",
   description:
-    "Hasan Durusoy’un mesleki yaklaşımı ve çalışma çerçevesi hakkında taslak bilgiler.",
-};
+    "Hasan Durusoy’un mesleki yaklaşımı ve çalışma çerçevesi hakkında bilgiler.",
+  path: "/hakkimda",
+});
 
 export default function AboutPage() {
   return (
