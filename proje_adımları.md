@@ -337,15 +337,15 @@
 
 ### Otomatik testler
 
-- [ ] Zod şemaları, yardımcı fonksiyonlar, slug ve tarih işlemleri için birim testleri yazılır.
-- [ ] Prisma repository/service katmanı test veritabanıyla entegrasyon testine alınır.
-- [ ] Randevu oluşturma; geçerli, geçersiz, duplicate, rate limit ve e-posta hatası senaryolarıyla test edilir.
-- [ ] Auth, rol/yetki ve oturum süresi entegrasyon testleri yazılır.
-- [ ] Makale CRUD, yayınlama ve sanitize davranışı test edilir.
-- [ ] Metadata, sitemap, robots ve JSON-LD çıktıları test edilir.
+- [x] Zod şemaları, yardımcı fonksiyonlar, slug ve tarih işlemleri için birim testleri yazılır. — Şema, Türkçe slug/tarih, cookie, hash, origin, URL ve rate-limit yardımcıları testli.
+- [x] Prisma repository/service katmanı test veritabanıyla entegrasyon testine alınır. — CI'da izole PostgreSQL 14 üzerinde gerçek Prisma CRUD/ilişki/unique constraint testleri; yerelde yalnız `RUN_DB_INTEGRATION=1` ile açılır.
+- [x] Randevu oluşturma; geçerli, geçersiz, duplicate, rate limit ve e-posta hatası senaryolarıyla test edilir. — Server Action bağımlılıkları kontrollü mock'larla beş akışta testli; DB constraint ayrıca entegrasyon testinde.
+- [ ] Auth, rol/yetki ve oturum süresi entegrasyon testleri yazılır. — Parola, rol politikası, cookie, süre sonu, iptal, pasif kullanıcı ve parola değişimi birim testli; gerçek HTTP+DB auth entegrasyonu E2E altyapısıyla tamamlanacak.
+- [x] Makale CRUD, yayınlama ve sanitize davranışı test edilir. — PostgreSQL entegrasyonunda create/publish/read/delete; şemada ham HTML, tehlikeli link ve H1 reddi testli.
+- [x] Metadata, sitemap, robots ve JSON-LD çıktıları test edilir. — Canonical/OG, dinamik sitemap görseli, admin robots yasağı ve script-breaking JSON-LD karakterleri kapsandı.
 - [ ] Playwright/Cypress ile kritik E2E akışları yazılır.
-- [ ] Migration’lar boş ve production benzeri veri üzerinde CI/staging’de test edilir.
-- [ ] E-posta şablonları render ve temel içerik testine alınır.
+- [ ] Migration’lar boş ve production benzeri veri üzerinde CI/staging’de test edilir. — CI boş PostgreSQL 14'e `prisma migrate deploy` uyguluyor; production benzeri veriyle upgrade provası staging aşamasında açık.
+- [x] E-posta şablonları render ve temel içerik testine alınır. — HTML/text/subject, HTML escaping, veri minimizasyonu ve timeout testli.
 
 ### Manuel kalite güvence
 

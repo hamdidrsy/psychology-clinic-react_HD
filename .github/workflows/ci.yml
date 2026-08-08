@@ -16,9 +16,26 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_DB: psychology_clinic_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d psychology_clinic_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       NEXT_TELEMETRY_DISABLED: "1"
       NEXT_PUBLIC_SITE_URL: "http://localhost:3000"
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/psychology_clinic_test?schema=public"
+      DIRECT_DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/psychology_clinic_test?schema=public"
+      RUN_DB_INTEGRATION: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,6 +57,9 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Apply migrations to empty test database
+        run: npm run prisma:migrate:deploy
 
       - name: Test
         run: npm run test

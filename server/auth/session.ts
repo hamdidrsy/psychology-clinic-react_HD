@@ -30,6 +30,24 @@ export function hashSessionToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
+export function isAdminSessionUsable(
+  session: {
+    revokedAt: Date | null;
+    expiresAt: Date;
+    createdAt: Date;
+    adminUser: { isActive: boolean; passwordChangedAt: Date | null };
+  },
+  now = new Date(),
+) {
+  return !(
+    session.revokedAt ||
+    session.expiresAt <= now ||
+    !session.adminUser.isActive ||
+    (session.adminUser.passwordChangedAt &&
+      session.createdAt <= session.adminUser.passwordChangedAt)
+  );
+}
+
 export async function createAdminSession(adminUserId: string) {
   const env = getServerEnv();
   const token = randomBytes(32).toString("base64url");
@@ -63,14 +81,7 @@ export async function getCurrentAdmin(): Promise<AdminPrincipal | null> {
     include: { adminUser: true },
   });
 
-  if (
-    !session ||
-    session.revokedAt ||
-    session.expiresAt <= now ||
-    !session.adminUser.isActive ||
-    (session.adminUser.passwordChangedAt &&
-      session.createdAt <= session.adminUser.passwordChangedAt)
-  ) {
+  if (!session || !isAdminSessionUsable(session, now)) {
     return null;
   }
 
