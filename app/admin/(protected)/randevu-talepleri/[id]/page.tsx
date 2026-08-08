@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AdminAppointmentStatusForm } from "@/components/admin-appointment-status-form";
 import { appointmentStatusLabels } from "@/lib/admin/appointment-schema";
 import { formatDateTime } from "@/lib/format-date";
+import { writeAuditLog } from "@/server/audit";
 import { requireAdmin } from "@/server/auth/session";
 import { getDb } from "@/server/db";
 
@@ -13,7 +14,7 @@ export default async function AppointmentRequestDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ saved?: string }>;
 }) {
-  await requireAdmin("ADMIN");
+  const admin = await requireAdmin("ADMIN");
   const request = await getDb().appointmentRequest.findUnique({
     where: { id: (await params).id },
     include: {
@@ -25,6 +26,12 @@ export default async function AppointmentRequestDetailPage({
     },
   });
   if (!request) notFound();
+  await writeAuditLog({
+    actorAdminId: admin.id,
+    action: "APPOINTMENT_VIEWED",
+    entityType: "AppointmentRequest",
+    entityId: request.id,
+  });
   const saved = (await searchParams).saved;
   const details = [
     ["Referans", request.referenceCode],

@@ -262,6 +262,10 @@ export function AppointmentForm() {
             okuduğumu teyit ediyorum. *
           </span>
         </label>
+        <p className="form-help ml-8">
+          Bu teyit açık rıza veya pazarlama izni değildir; form kapsamında
+          pazarlama iletişimi yapılmaz.
+        </p>
         {errors.privacyAcknowledged?.[0] && (
           <p className="form-error" id="privacyAcknowledged-error">
             {errors.privacyAcknowledged[0]}

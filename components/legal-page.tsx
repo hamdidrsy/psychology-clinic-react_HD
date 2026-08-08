@@ -7,10 +7,14 @@ import { Container } from "@/components/ui/container";
 export function LegalPage({
   title,
   lead,
+  version,
+  effectiveDate,
   children,
 }: {
   title: string;
   lead: string;
+  version: string;
+  effectiveDate?: string;
   children: ReactNode;
 }) {
   return (
@@ -25,10 +29,17 @@ export function LegalPage({
         <ContentNotice />
         <div className="prose-content border-border shadow-card mt-10 rounded-2xl border bg-white p-6 sm:p-10">
           <p>
-            <strong>Durum:</strong> Hukuk onayı bekleyen teknik taslak
+            <strong>Durum:</strong>{" "}
+            {effectiveDate
+              ? "Yürürlükte"
+              : "Hukuk onayı bekleyen teknik taslak"}
           </p>
           <p>
-            <strong>Yürürlük tarihi:</strong> Henüz yürürlükte değildir
+            <strong>Sürüm:</strong> {version}
+          </p>
+          <p>
+            <strong>Yürürlük tarihi:</strong>{" "}
+            {effectiveDate ?? "Henüz yürürlükte değildir"}
           </p>
           {children}
         </div>

@@ -66,6 +66,8 @@ Yönetici kimlik doğrulama mimarisi, ilk hesap ve kurtarma prosedürü için
 npm run admin:create
 npm run admin:reset-password
 npm run admin:revoke-sessions
+npm run appointments:purge-expired
+npm run privacy:cleanup-expired
 ```
 
 - `APPOINTMENT_RETENTION_DAYS`: Hukuk onaylı randevu talebi saklama süresi; geçici varsayılan 90 gün.

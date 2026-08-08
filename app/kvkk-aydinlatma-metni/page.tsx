@@ -1,9 +1,12 @@
+import Link from "next/link";
+
 import { LegalPage } from "@/components/legal-page";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
   title: "KVKK Aydınlatma Metni",
-  description: "Kişisel verilerin işlenmesine ilişkin aydınlatma metni.",
+  description:
+    "Randevu talebi kapsamında kişisel verilerin işlenmesine ilişkin teknik aydınlatma taslağı.",
   path: "/kvkk-aydinlatma-metni",
 });
 
@@ -11,42 +14,61 @@ export default function KvkkPage() {
   return (
     <LegalPage
       title="KVKK Aydınlatma Metni"
-      lead="Kişisel verilerin hangi amaçlarla ve hangi sınırlar içinde işlendiğini açıklayacak metin yapısı."
+      lead="Randevu talebi sırasında hangi verilerin, hangi sınırlar içinde işlendiğini açıklayan teknik taslak."
+      version="kvkk-randevu-2026-08-09-v1-draft"
     >
       <h2>1. Veri sorumlusu</h2>
       <p>
-        Veri sorumlusunun doğrulanmış unvanı, adresi ve başvuru iletişim
-        bilgileri hukuk onayından sonra eklenecektir.
+        Veri sorumlusunun doğrulanmış adı/unvanı, açık adresi ve başvuru
+        iletişim kanalı hukuk onayından sonra eklenecektir. Bu bilgiler
+        tamamlanmadan metin yürürlüğe alınamaz.
       </p>
-      <h2>2. İşlenen veri kategorileri</h2>
+      <h2>2. İşlenen veri kategorileri ve toplama yöntemi</h2>
       <p>
-        Randevu talebi kapsamında ad soyad, sağlanan e-posta ve/veya telefon,
-        iletişim tercihi, seçilen hizmet, isteğe bağlı kısa not ile aydınlatma
-        sürümü/zamanı işlenmesi planlanmaktadır. Özel nitelikli sağlık bilgisi
-        istenmez.
+        Elektronik randevu formuyla ad soyad, sağlanan e-posta ve/veya telefon,
+        iletişim tercihi, isteğe bağlı hizmet/zaman tercihi ve kısa not alınır.
+        Aydınlatma sürümü ile teyit zamanı da kaydedilir.
       </p>
-      <h2>3. İşleme amaçları ve hukuki sebepler</h2>
       <p>
-        Talebe geri dönüş, uygunluk ve zamanlama iletişimi, bilgi güvenliği,
-        kötüye kullanımın önlenmesi ve yasal yükümlülük amaçlarının kesin hukuki
-        sebepleri hukuk danışmanı tarafından doldurulacaktır.
+        Güvenlik için ham IP yerine süreli ve geri döndürülemez özetler; tekrar
+        gönderimi önlemek için idempotency özeti tutulabilir. Form hasta dosyası
+        veya kesin randevu değildir. Tanı, sağlık öyküsü, kimlik ve ödeme
+        bilgisi istenmez.
       </p>
-      <h2>4. Aktarım ve hizmet sağlayıcılar</h2>
+      <h2>3. Amaçlar ve hukuki sebepler</h2>
       <p>
-        PostgreSQL barındırma, uygulama hosting ve Resend dahil veri işleyenler;
-        veri bölgeleri ve yurt dışı aktarım değerlendirmesi tamamlandıktan sonra
-        listelenecektir.
+        Talebe dönüş, iletişim ve zamanlama, bilgi güvenliği, kötüye kullanımın
+        önlenmesi ve yasal yükümlülük amaçları taslak envanterde
+        eşleştirilmiştir. KVKK’nın 5 ve gerekiyorsa 6. maddesindeki kesin işleme
+        şartı hukuk danışmanı tarafından faaliyet bazında onaylanacaktır.
       </p>
-      <h2>5. Saklama süresi</h2>
       <p>
-        Randevu talebi ve denetim kayıtlarının kesin saklama süreleri henüz
-        onaylanmadı. Süre sonunda güvenli silme veya anonimleştirme
-        uygulanacaktır.
+        Formdaki okuma teyidi açık rıza veya pazarlama izni değildir. Pazarlama
+        iletişimi yapılmaz. İleride açık rıza gereken ayrı bir amaç doğarsa
+        aydınlatmadan ayrı ve geri çekilebilir bir tercih sunulacaktır.
       </p>
-      <h2>6. İlgili kişi hakları ve başvuru</h2>
+      <h2>4. Alıcılar ve aktarım</h2>
       <p>
-        KVKK kapsamındaki haklar ile başvuru yöntemi, doğrulanmış veri sorumlusu
-        iletişim bilgileriyle birlikte hukuk onayından sonra yayımlanacaktır.
+        Yetkili klinik yöneticileri, seçilecek PostgreSQL/hosting sağlayıcısı ve
+        bildirim etkinse Resend veri akışına dahil olabilir. Sağlayıcı,
+        ülke/bölge, sözleşme ve yurt dışı aktarım mekanizması tamamlanmadan
+        production aktarımı etkinleştirilmemelidir.
+      </p>
+      <h2>5. Saklama</h2>
+      <p>
+        Randevu talepleri için geçici teknik hedef 90 gündür. Süre hukuk
+        onayıyla kesinleşir; süre sonunda kayıt ve bağlı bildirim/durum geçmişi
+        güvenli bakım işiyle silinir. Diğer veri türleri için süreler veri yaşam
+        döngüsü belgesinde yer alır.
+      </p>
+      <h2>6. İlgili kişi hakları</h2>
+      <p>
+        KVKK kapsamındaki erişim, düzeltme, silme/yok etme, aktarılan kişileri
+        öğrenme ve itiraz haklarının nasıl kullanılacağı{" "}
+        <Link href="/ilgili-kisi-basvurusu">
+          ilgili kişi başvuru sayfasında
+        </Link>{" "}
+        açıklanır. Doğrulanmış başvuru kanalı production öncesinde eklenecektir.
       </p>
     </LegalPage>
   );

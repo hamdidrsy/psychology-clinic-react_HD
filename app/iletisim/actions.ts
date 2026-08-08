@@ -20,7 +20,7 @@ import {
   trustedClientAddress,
 } from "@/server/security/request-origin";
 
-const privacyNoticeVersion = "draft-2026-08-08";
+const privacyNoticeVersion = "kvkk-randevu-2026-08-09-v1-draft";
 const minimumCompletionMs = 1_500;
 const maximumFormAgeMs = 2 * 60 * 60 * 1000;
 

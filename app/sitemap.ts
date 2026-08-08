@@ -12,6 +12,7 @@ const staticPages = [
   "/sik-sorulan-sorular",
   "/iletisim",
   "/kvkk-aydinlatma-metni",
+  "/ilgili-kisi-basvurusu",
   "/gizlilik-politikasi",
   "/cerez-politikasi",
 ];

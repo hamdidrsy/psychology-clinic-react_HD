@@ -280,29 +280,29 @@
 
 > Bu bölüm teknik kontrol listesidir; hukuki metinler ve hukuki dayanaklar yetkin hukuk danışmanı tarafından onaylanmalıdır.
 
-- [ ] Veri sorumlusu, iletişim bilgileri ve işlenen veri kategorileri doğrulanır.
-- [ ] İşleme amaçları, hukuki sebepler, alıcı grupları ve aktarım yapılan ülkeler/sağlayıcılar belgelenir.
-- [ ] Veri envanteri ve veri akış haritası hazırlanır: tarayıcı → uygulama → PostgreSQL → Resend/log/analitik.
-- [ ] Randevu talebinde özel nitelikli kişisel veri toplama riski değerlendirilir ve alanlar minimize edilir.
-- [ ] Aydınlatma metni formun veri toplama noktasında erişilebilirdir.
-- [ ] Açık rıza gerekiyorsa aydınlatmadan ayrı, özgür iradeyle ve kayıtlanabilir biçimde alınır.
-- [ ] Saklama süreleri veri türü bazında yazılır ve otomatik silme/anonimleştirme işi planlanır.
-- [ ] İlgili kişi başvuru süreci; erişim, düzeltme, silme ve itiraz talepleri için belgelenir.
-- [ ] Veri ihlali müdahale ve bildirim prosedürü hazırlanır.
-- [ ] Veri işleyen/alt işleyen sözleşmeleri ve sağlayıcı gizlilik koşulları incelenir.
-- [ ] Yurt dışı aktarım şartları güncel mevzuat ve kurul kararlarına göre hukuk danışmanıyla değerlendirilir.
-- [ ] Sadece zorunlu çerezler varsa açık ve doğru çerez politikası hazırlanır.
-- [ ] Analitik/pazarlama çerezleri eklenirse önceden izin, kategori bazlı tercih, reddetme ve geri çekme uygulanır.
-- [ ] Consent kaydı sürümlenir; izin öncesi üçüncü taraf script çalışmadığı doğrulanır.
-- [ ] Harita/video gibi embed’ler üçüncü taraf veri aktarımı açısından consent veya privacy-enhanced yaklaşımla ele alınır.
-- [ ] Analitik kullanılıyorsa IP ve kişisel veri minimizasyonu uygulanır.
-- [ ] Production loglarında form gövdesi, token, parola veya hassas veri tutulmadığı doğrulanır.
-- [ ] Admin erişimi, dışa aktarımlar ve veri silme işlemleri denetlenebilir olur.
-- [ ] KVKK/gizlilik/çerez metinlerinde sürüm ve yürürlük tarihi bulunur.
+- [ ] Veri sorumlusu, iletişim bilgileri ve işlenen veri kategorileri doğrulanır. — Kategoriler envanterde; veri sorumlusu adı/unvanı, adresi ve resmî başvuru kanalı bekleniyor.
+- [ ] İşleme amaçları, hukuki sebepler, alıcı grupları ve aktarım yapılan ülkeler/sağlayıcılar belgelenir. — Teknik amaç/alıcı taslağı hazır; kesin hukuki şart, production sağlayıcı/bölge ve ülke bilgisi bekleniyor.
+- [x] Veri envanteri ve veri akış haritası hazırlanır: tarayıcı → uygulama → PostgreSQL → Resend/log/analitik. — `docs/privacy-data-lifecycle.md`; analitik etkin değil.
+- [x] Randevu talebinde özel nitelikli kişisel veri toplama riski değerlendirilir ve alanlar minimize edilir. — Sağlık/kimlik/ödeme alanı yok; not sınırı ve görünür uyarı var; not e-postaya eklenmiyor.
+- [x] Aydınlatma metni formun veri toplama noktasında erişilebilirdir. — Form içi bağlantı ve kaydedilen sürüm/zaman.
+- [x] Açık rıza gerekiyorsa aydınlatmadan ayrı, özgür iradeyle ve kayıtlanabilir biçimde alınır. — Mevcut teyit açık rıza değildir; pazarlama/analitik yok. Yeni amaçta ayrı ve geri çekilebilir tercih zorunluluğu belgelendi.
+- [x] Saklama süreleri veri türü bazında yazılır ve otomatik silme/anonimleştirme işi planlanır. — Geçici süre matrisi, dry-run randevu silme ve `privacy:cleanup-expired`; kesin süreler hukuk/sağlayıcı onayı bekliyor.
+- [x] İlgili kişi başvuru süreci; erişim, düzeltme, silme ve itiraz talepleri için belgelenir. — Public `/ilgili-kisi-basvurusu` ve `docs/data-subject-request-procedure.md`; resmî kanal bekleniyor.
+- [x] Veri ihlali müdahale ve bildirim prosedürü hazırlanır. — 72 saat takibi ve ilgili kişi iletişimi: `docs/personal-data-breach-response.md`.
+- [ ] Veri işleyen/alt işleyen sözleşmeleri ve sağlayıcı gizlilik koşulları incelenir. — Sağlayıcı envanteri hazır; production hosting/DB ve Resend DPA/alt işleyen incelemesi bekleniyor.
+- [ ] Yurt dışı aktarım şartları güncel mevzuat ve kurul kararlarına göre hukuk danışmanıyla değerlendirilir. — Güncel KVKK 9, Yönetmelik ve standart sözleşme akışı belgelendi; sağlayıcı/ülke ve hukuk onayı bekleniyor.
+- [x] Sadece zorunlu çerezler varsa açık ve doğru çerez politikası hazırlanır. — Admin oturumu ve localStorage tercih kaydı ayrı açıklanıyor.
+- [x] Analitik/pazarlama çerezleri eklenirse önceden izin, kategori bazlı tercih, reddetme ve geri çekme uygulanır. — Kategoriler varsayılan kapalı; araç eklenmeden önce script gating şartı tanımlandı.
+- [x] Consent kaydı sürümlenir; izin öncesi üçüncü taraf script çalışmadığı doğrulanır. — `2026-08-09-v1` JSON tercih kaydı; mevcut projede üçüncü taraf analitik/embed script’i yok.
+- [x] Harita/video gibi embed’ler üçüncü taraf veri aktarımı açısından consent veya privacy-enhanced yaklaşımla ele alınır. — Embed kullanılmıyor; eklenme koşulu politika ve envanterde kayıtlı.
+- [x] Analitik kullanılıyorsa IP ve kişisel veri minimizasyonu uygulanır. — Analitik yok; ham IP saklanmıyor, güvenilir proxy durumunda yalnız süreli HMAC özeti.
+- [ ] Production loglarında form gövdesi, token, parola veya hassas veri tutulmadığı doğrulanır. — Uygulama kodu bunları loglamıyor; gerçek hosting log/scrubbing ayarı production sağlayıcısında doğrulanacak.
+- [x] Admin erişimi, dışa aktarımlar ve veri silme işlemleri denetlenebilir olur. — Giriş, randevu detay erişimi, durum değişimi ve silme/temizlik audit loglu; CSV dışa aktarım yok.
+- [x] KVKK/gizlilik/çerez metinlerinde sürüm ve yürürlük tarihi bulunur. — Sürümler görünür; hukuk onayına kadar yürürlük tarihi açıkça “henüz yürürlükte değil”.
 
 ### Çıkış kriterleri
 
-- [ ] Hukuk onaylı metinler, teknik consent davranışı, saklama/silme ve ilgili kişi süreçleri birbiriyle tutarlıdır.
+- [ ] Hukuk onaylı metinler, teknik consent davranışı, saklama/silme ve ilgili kişi süreçleri birbiriyle tutarlıdır. — Teknik davranış ve taslaklar tutarlı; hukuk onayı, veri sorumlusu/başvuru kanalı ve production sağlayıcıları bekleniyor.
 
 ## 11. Güvenlik sertleştirme
 

@@ -4,7 +4,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata({
   title: "Gizlilik Politikası",
   description:
-    "Web sitesi gizlilik ve veri güvenliği uygulamalarının açıklaması.",
+    "Web sitesindeki veri işleme ve güvenlik uygulamalarının teknik gizlilik taslağı.",
   path: "/gizlilik-politikasi",
 });
 
@@ -12,36 +12,44 @@ export default function PrivacyPage() {
   return (
     <LegalPage
       title="Gizlilik Politikası"
-      lead="Web sitesi kullanımında verilerin nasıl korunduğunu ve hangi teknik kayıtların tutulduğunu açıklayacak taslak."
+      lead="Web sitesi kullanımında verilerin nasıl korunduğunu ve hangi teknik kayıtların tutulduğunu açıklayan taslak."
+      version="gizlilik-2026-08-09-v1-draft"
     >
       <h2>Toplanan bilgiler</h2>
       <p>
-        Site, randevu talebi gönderilmedikçe doğrudan kimlik/iletişim bilgisi
-        istemez. Talep işlevi etkinleştirildiğinde yalnız formda açıkça
-        gösterilen ve iletişim için gerekli alanlar işlenecektir.
+        Site, randevu talebi gönderilmedikçe doğrudan kimlik veya iletişim
+        bilgisi istemez. Form yalnız iletişim için gerekli alanları toplar;
+        sağlık, kimlik ve ödeme bilgisi istenmez.
       </p>
       <h2>Teknik kayıtlar</h2>
       <p>
-        Güvenlik ve hata teşhisi için sınırlı teknik loglar tutulabilir. Parola,
-        token, cookie, tam form gövdesi, serbest not ve hassas sağlık verisi
-        loglanmayacaktır.
+        Rate limit anahtarları ve kısa süreli kötüye kullanım özetleri geri
+        döndürülemez biçimde tutulur. Parola, oturum belirteci, tam form
+        gövdesi, serbest not, e-posta ve telefon uygulama loglarına yazılmaz.
       </p>
       <h2>Güvenlik</h2>
       <p>
-        Aktarım şifrelemesi, en az yetki, güvenli oturum, rate limiting,
-        yedekleme ve erişim kayıtları uygulanacaktır. Hiçbir internet sistemi
-        için mutlak güvenlik garantisi verilemez.
+        Aktarım şifrelemesi, güvenli yönetici oturumu, rol kontrolü, rate limit,
+        veri minimizasyonu, denetim kaydı ve süreli silme uygulanır. Hiçbir
+        internet sistemi için mutlak güvenlik garantisi verilemez.
       </p>
-      <h2>Üçüncü taraflar</h2>
+      <h2>Üçüncü taraflar ve yurt dışı aktarım</h2>
       <p>
-        Hosting, PostgreSQL, Resend, hata izleme ve bot koruma sağlayıcıları
-        seçildikten sonra işledikleri veri, amaç ve bağlantılar burada
-        açıklanacaktır.
+        Yerel geliştirmede PostgreSQL 14 kullanılır. Production
+        hosting/veritabanı bölgesi seçilmemiştir. Resend bildirimi
+        yapılandırılmadığı sürece e-posta aktarımı gerçekleşmez.
+        Etkinleştirmeden önce sözleşme, alt işleyen, saklama ve KVKK 9. madde
+        mekanizması onaylanacaktır.
+      </p>
+      <h2>Otomatik karar verme</h2>
+      <p>
+        Randevu uygunluğu veya kullanıcı hakkında otomatik karar/profil
+        oluşturma yapılmaz. Rate limit yalnız kötüye kullanım denetimidir.
       </p>
       <h2>İletişim</h2>
       <p>
-        Gizlilik soruları ve ilgili kişi başvuruları için doğrulanmış iletişim
-        kanalı production yayını öncesinde eklenecektir.
+        Gizlilik soruları ve ilgili kişi başvuruları için doğrulanmış kanal,
+        veri sorumlusu kimliğiyle birlikte production öncesinde eklenecektir.
       </p>
     </LegalPage>
   );
