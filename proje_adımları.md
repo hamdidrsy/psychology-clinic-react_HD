@@ -306,25 +306,25 @@
 
 ## 11. Güvenlik sertleştirme
 
-- [ ] Tehdit modellemesi yapılır: varlıklar, aktörler, giriş noktaları, kötüye kullanım senaryoları ve önlemler.
-- [ ] OWASP ASVS ve OWASP Top 10’a göre uygun kontrol listesi uygulanır.
-- [ ] Tüm girdiler sunucu tarafında doğrulanır; çıktı bağlamına uygun encode edilir.
-- [ ] Rich text/Markdown HTML çıktısı allowlist ile sanitize edilir.
-- [ ] Prisma sorgularında raw SQL’den kaçınılır; gerekirse parametreli sorgu kullanılır.
-- [ ] IDOR/BOLA testleri admin ve randevu kaynaklarında yapılır.
-- [ ] Güvenli HTTP başlıkları eklenir: CSP, HSTS, `X-Content-Type-Options`, referrer ve permissions policy.
-- [ ] CSP nonce/hash yaklaşımı üçüncü taraf gereksinimleriyle tasarlanır; `unsafe-inline`/`unsafe-eval` önlenir.
-- [ ] Clickjacking koruması `frame-ancestors` ile uygulanır.
-- [ ] CORS yalnız gerekiyorsa ve dar origin listesiyle açılır.
-- [ ] Gizli anahtarlar ortam bazında ayrılır; repoya, istemci bundle’ına ve loglara girmez.
-- [ ] Secret rotasyonu ve sızıntı müdahale prosedürü hazırlanır.
-- [ ] Bağımlılık ve secret taraması CI’da çalıştırılır.
+- [x] Tehdit modellemesi yapılır: varlıklar, aktörler, giriş noktaları, kötüye kullanım senaryoları ve önlemler. — `docs/security-hardening.md`.
+- [x] OWASP ASVS ve OWASP Top 10’a göre uygun kontrol listesi uygulanır. — Kapsam ve kalan riskler sertifikasyon iddiası olmadan kaydedildi.
+- [x] Tüm girdiler sunucu tarafında doğrulanır; çıktı bağlamına uygun encode edilir. — Server Action Zod şemaları, React encoding ve güvenli JSON-LD serializer.
+- [x] Rich text/Markdown HTML çıktısı allowlist ile sanitize edilir. — Daha dar politika uygulanıyor: ham HTML reddediliyor, Markdown güvenli React düğümlerine çevriliyor.
+- [x] Prisma sorgularında raw SQL’den kaçınılır; gerekirse parametreli sorgu kullanılır. — Tek raw rate-limit upsert'i Prisma tagged-template ile parametreli.
+- [x] IDOR/BOLA testleri admin ve randevu kaynaklarında yapılır. — Randevu yalnız ADMIN; editör/makale ve randevu yetki ayrımı test edildi.
+- [x] Güvenli HTTP başlıkları eklenir: CSP, HSTS, `X-Content-Type-Options`, referrer ve permissions policy. — `next.config.ts` ve `proxy.ts`.
+- [x] CSP nonce/hash yaklaşımı üçüncü taraf gereksinimleriyle tasarlanır; `unsafe-inline`/`unsafe-eval` önlenir. — Production nonce'lu; yalnız local hot reload geliştirme istisnası var.
+- [x] Clickjacking koruması `frame-ancestors` ile uygulanır. — CSP ve ek `X-Frame-Options: DENY`.
+- [x] CORS yalnız gerekiyorsa ve dar origin listesiyle açılır. — Cross-origin API yok; CORS açılmadı.
+- [x] Gizli anahtarlar ortam bazında ayrılır; repoya, istemci bundle’ına ve loglara girmez. — Server-only env ve maskeli hata kayıtları; provider doğrulaması production kapısında.
+- [x] Secret rotasyonu ve sızıntı müdahale prosedürü hazırlanır. — `docs/security-hardening.md`.
+- [x] Bağımlılık ve secret taraması CI’da çalıştırılır. — `npm audit` ve değeri göstermeyen `security:secrets`.
 - [ ] Next.js/React/Prisma/Auth güvenlik duyurularının takibi sahiplenilir.
-- [ ] Hata yanıtları stack trace, sorgu veya kişisel veri sızdırmaz.
-- [ ] Production source map erişimi ve debug ayarları kontrol edilir.
-- [ ] Upload varsa içerik türü, magic byte, boyut, dosya adı, depolama origin’i ve erişim politikası korunur.
-- [ ] SSRF ve açık redirect riskleri harici URL kullanılan tüm alanlarda test edilir.
-- [ ] Rate limit’in dağıtık ortamda merkezi ve fail-open/fail-closed davranışı belgelenir.
+- [x] Hata yanıtları stack trace, sorgu veya kişisel veri sızdırmaz. — Admin ve global hata logları güvenli hata kodu/digest ile sınırlandı.
+- [x] Production source map erişimi ve debug ayarları kontrol edilir. — Browser source map açıkça kapalı.
+- [x] Upload varsa içerik türü, magic byte, boyut, dosya adı, depolama origin’i ve erişim politikası korunur. — Upload yok; eklenme güvenlik kapısı belgelendi.
+- [x] SSRF ve açık redirect riskleri harici URL kullanılan tüm alanlarda test edilir. — Public HTTPS URL doğrulaması ve mevcut yerel admin redirect allowlist'i testli.
+- [x] Rate limit’in dağıtık ortamda merkezi ve fail-open/fail-closed davranışı belgelenir. — PostgreSQL merkezi ve DB hatasında fail-closed.
 - [ ] Veritabanı kullanıcısına en az yetki verilir; TLS zorlanır.
 - [ ] Yönetici ve altyapı hesaplarında MFA etkinleştirilir.
 - [ ] Bağımsız güvenlik gözden geçirmesi ve mümkünse sızma testi yapılır.

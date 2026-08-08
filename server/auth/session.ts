@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import type { AdminRole } from "@/generated/prisma/enums";
+import { canManageArticles } from "@/lib/auth/authorization";
 import { getDb } from "@/server/db";
 import { getServerEnv } from "@/server/env";
 
@@ -98,7 +99,7 @@ export async function requireAdmin(requiredRole?: AdminRole) {
 
 export async function requireContentManager() {
   const admin = await requireAdmin();
-  if (admin.role !== "ADMIN" && admin.role !== "EDITOR") {
+  if (!canManageArticles(admin.role)) {
     redirect("/admin?yetki=yetersiz");
   }
   return admin;

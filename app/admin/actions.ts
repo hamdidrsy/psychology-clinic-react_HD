@@ -132,7 +132,9 @@ export async function loginAdmin(
       throw error;
     }
     // Configuration and database details must never be exposed on the login page.
-    console.error("Admin login failed safely.", error);
+    console.error("Admin login failed safely.", {
+      failureCode: error instanceof Error ? error.name : "UNKNOWN_ERROR",
+    });
     await finishDelay();
     return { message: genericLoginError };
   }

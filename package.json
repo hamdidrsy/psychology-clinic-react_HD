@@ -34,7 +34,8 @@
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
-    "audit": "npm audit --omit=dev --audit-level=high"
+    "audit": "npm audit --omit=dev --audit-level=high",
+    "security:secrets": "tsx scripts/scan-secrets.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.9.1",

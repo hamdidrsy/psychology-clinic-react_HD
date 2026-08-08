@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { isSafePublicHttpsUrl } from "@/lib/security/public-url";
+
 export const articleStatuses = ["DRAFT", "PUBLISHED", "ARCHIVED"] as const;
 
 export function slugify(value: string) {
@@ -21,7 +23,14 @@ export function slugify(value: string) {
 
 const optionalUrl = z.preprocess(
   (value) => (value === "" ? undefined : value),
-  z.url("Geçerli bir URL girin.").max(2048).optional(),
+  z
+    .url("Geçerli bir URL girin.")
+    .max(2048)
+    .refine(
+      isSafePublicHttpsUrl,
+      "Yalnız herkese açık HTTPS adresi kullanılabilir.",
+    )
+    .optional(),
 );
 
 export const articleFormSchema = z

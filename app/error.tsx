@@ -10,8 +10,8 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
-  }, [error]);
+    console.error("Unhandled UI error", { digest: error.digest ?? "unknown" });
+  }, [error.digest]);
 
   return (
     <main className="mx-auto min-h-[60vh] max-w-3xl px-4 py-20 sm:px-6">

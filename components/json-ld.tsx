@@ -1,3 +1,5 @@
+import { headers } from "next/headers";
+
 export function safeJsonLd(value: unknown) {
   return JSON.stringify(value)
     .replace(/</g, "\\u003c")
@@ -5,10 +7,12 @@ export function safeJsonLd(value: unknown) {
     .replace(/\u2029/g, "\\u2029");
 }
 
-export function JsonLd({ data }: { data: unknown }) {
+export async function JsonLd({ data }: { data: unknown }) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <script
       dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }}
+      nonce={nonce}
       type="application/ld+json"
     />
   );
