@@ -16,6 +16,17 @@ const serverEnvSchema = z.object({
   APPOINTMENT_NOTIFICATION_TO: optionalSecret.pipe(z.email().optional()),
   EMAIL_FROM: optionalSecret,
   AUTH_SECRET: optionalSecret.pipe(z.string().min(32).optional()),
+  ADMIN_SESSION_HOURS: z.coerce.number().int().min(1).max(24).default(8),
+  APPOINTMENT_RETENTION_DAYS: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(3650)
+    .default(90),
+  TRUST_PROXY_HEADERS: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

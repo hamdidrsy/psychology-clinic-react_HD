@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { AppointmentFormPreview } from "@/components/appointment-form-preview";
+import { AppointmentForm } from "@/components/appointment-form";
 import { ContentNotice } from "@/components/content-notice";
 import { PageHeader } from "@/components/page-header";
 import { Card } from "@/components/ui/card";
@@ -63,7 +63,7 @@ export default function ContactPage() {
             </Card>
           </aside>
           <div className="border-border shadow-card rounded-2xl border bg-white p-6 sm:p-8">
-            <AppointmentFormPreview />
+            <AppointmentForm />
           </div>
         </div>
       </Container>

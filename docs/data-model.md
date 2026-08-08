@@ -10,6 +10,7 @@
 | Model                      | Amaç                                                    | Kişisel veri                                             |
 | -------------------------- | ------------------------------------------------------- | -------------------------------------------------------- |
 | `AdminUser`                | Yetkili kullanıcı, rol ve hesap durumu                  | E-posta, görünen ad, parola özeti                        |
+| `AdminSession`             | Süreli ve iptal edilebilir yönetici oturumu             | Ham belirteç yerine SHA-256 özeti                        |
 | `ArticleCategory`          | Makale sınıflandırması                                  | Yok                                                      |
 | `Article`                  | Taslak/yayın/arşiv makale yaşam döngüsü ve SEO alanları | Yazar ilişkisi dışında yok                               |
 | `ArticleSlugRedirect`      | Değişen makale URL’lerinde kalıcı redirect              | Yok                                                      |
@@ -18,6 +19,7 @@
 | `AppointmentStatusHistory` | Randevu operasyon durum geçmişi                         | Admin ilişkisi ve minimize edilmiş operasyon notu        |
 | `AppointmentNotification`  | Resend gönderim/retry durumu                            | Provider mesaj kimliği; alıcı/içerik tekrarlanmaz        |
 | `AuditLog`                 | Kritik yönetici işlemlerinin denetimi                   | Raw kişisel veri yasaktır; iç kimlik ve güvenli metadata |
+| `RateLimitBucket`          | Dağıtık form rate limit sayaçları                       | Yalnız HMAC/SHA-256 özet anahtar; raw IP/iletişim yok    |
 
 ## Veri minimizasyonu
 

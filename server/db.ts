@@ -19,8 +19,12 @@ function createPrismaClient() {
   });
 }
 
-export const db = globalForPrisma.prisma ?? createPrismaClient();
+export function getDb() {
+  const client = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = db;
+  if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.prisma = client;
+  }
+
+  return client;
 }

@@ -57,6 +57,19 @@ Kaynak ve örnekler `.env.example` içindedir.
 - `APPOINTMENT_NOTIFICATION_TO`: Klinik bildirim alıcısı.
 - `EMAIL_FROM`: Doğrulanmış gönderen kimliği.
 - `AUTH_SECRET`: En az 32 karakterlik auth secret.
+- `ADMIN_SESSION_HOURS`: Yönetici oturumunun 1-24 saat arasındaki mutlak ömrü (varsayılan `8`).
+
+Yönetici kimlik doğrulama mimarisi, ilk hesap ve kurtarma prosedürü için
+`docs/admin-authentication.md` dosyasına bakın. Yönetici operasyon komutları:
+
+```bash
+npm run admin:create
+npm run admin:reset-password
+npm run admin:revoke-sessions
+```
+
+- `APPOINTMENT_RETENTION_DAYS`: Hukuk onaylı randevu talebi saklama süresi; geçici varsayılan 90 gün.
+- `TRUST_PROXY_HEADERS`: Yalnız bilinen hosting proxy başlıklarını temizleyip yeniden yazıyorsa `true`.
 
 Eksik özellik secret’ları temel statik build’i engellemez. Bir özellik aktif edildiğinde `requireServerEnv` ile kendi zorunlu değişkenlerini doğrulamak zorundadır.
 
@@ -67,6 +80,8 @@ npm run prisma:migrate:deploy
 npm run prisma:generate
 npm run db:seed # yalnız development/test
 ```
+
+Randevu talebi akışı, rate limit, idempotency, Resend hata telafisi ve production kontrol listesi için `docs/appointment-flow.md` belgesine bakın.
 
 ## Dokümantasyon
 

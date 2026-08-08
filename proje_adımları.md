@@ -174,24 +174,24 @@
 
 ## 6. Randevu talep formu ve e-posta bildirimi
 
-- [ ] En az veri ilkesiyle form alanları kesinleştirilir; serbest metinde hassas sağlık bilgisi istenmez.
-- [ ] İstemci ve sunucu aynı Zod şemasından doğrulama yapar.
-- [ ] Türkçe, alanla ilişkili ve erişilebilir hata mesajları hazırlanır.
-- [ ] KVKK aydınlatma metnine erişim ve gerekli onay/teyit kutusu uygulanır.
-- [ ] Pazarlama izni gerekiyorsa hizmet talebinden ayrı ve varsayılan kapalı tutulur.
-- [ ] Server Action veya Route Handler için güven sınırı belirlenir.
-- [ ] Origin/host kontrolü ve CSRF risk değerlendirmesi yapılır.
-- [ ] Honeypot, minimum doldurma süresi ve gerektiğinde CAPTCHA/Turnstile uygulanır.
-- [ ] IP/kimlik bazlı rate limiting uygulanır; proxy başlıkları yalnız güvenilir altyapıda kullanılır.
-- [ ] Tekrarlı gönderimleri önlemek için idempotency/duplicate kontrolü eklenir.
-- [ ] Veritabanı kaydı ile bildirim sırası ve hata telafisi belirlenir; kullanıcı talebi e-posta hatasında kaybolmaz.
+- [x] En az veri ilkesiyle form alanları kesinleştirilir; serbest metinde hassas sağlık bilgisi istenmez. — Not 1000 karakter; sağlık, kimlik ve ödeme bilgisi uyarısı görünür.
+- [x] İstemci ve sunucu aynı Zod şemasından doğrulama yapar. — `lib/appointments/schema.ts`
+- [x] Türkçe, alanla ilişkili ve erişilebilir hata mesajları hazırlanır. — `aria-invalid`, `aria-describedby`, canlı durum ve ilk hataya odak.
+- [x] KVKK aydınlatma metnine erişim ve gerekli onay/teyit kutusu uygulanır. — Hukuk onaylı nihai sürüm metni bekleniyor.
+- [x] Pazarlama izni gerekiyorsa hizmet talebinden ayrı ve varsayılan kapalı tutulur. — İlk sürümde pazarlama izni/iletişimi yok.
+- [x] Server Action veya Route Handler için güven sınırı belirlenir. — Server Action tüm kontrolleri sunucuda tekrarlar.
+- [x] Origin/host kontrolü ve CSRF risk değerlendirmesi yapılır. — Proxy host başlığı yalnız `TRUST_PROXY_HEADERS=true` iken dikkate alınır.
+- [x] Honeypot, minimum doldurma süresi ve gerektiğinde CAPTCHA/Turnstile uygulanır. — Honeypot + 1,5 sn/2 saat kontrolü; CAPTCHA yalnız ölçülen ihtiyaçta eklenecek.
+- [x] IP/kimlik bazlı rate limiting uygulanır; proxy başlıkları yalnız güvenilir altyapıda kullanılır. — PostgreSQL merkezi bucket; kimlik 5/10 dk, güvenilen adres 20/10 dk; raw IP tutulmaz.
+- [x] Tekrarlı gönderimleri önlemek için idempotency/duplicate kontrolü eklenir. — UUID’nin SHA-256 özeti DB’de benzersiz; Resend ayrıca idempotency key kullanır.
+- [x] Veritabanı kaydı ile bildirim sırası ve hata telafisi belirlenir; kullanıcı talebi e-posta hatasında kaybolmaz. — Talep/durum/bildirim transaction; e-posta DB commit sonrasında.
 - [ ] Resend alan adı, gönderen adresi, SPF, DKIM ve gerekiyorsa DMARC doğrulanır.
-- [ ] Klinik bildirim e-postası kişisel veriyi gereksiz yere çoğaltmayacak şekilde tasarlanır.
-- [ ] Kullanıcıya alındı e-postası gönderilecekse içeriği, açık rızası/hukuki dayanağı ve suistimal riski değerlendirilir.
-- [ ] React Email veya eşdeğer şablon; metin alternatifiyle hazırlanır.
-- [ ] Resend timeout, retry, hata logu ve alarm davranışı uygulanır.
-- [ ] Başarı mesajı kesin randevu izlenimi yaratmayacak şekilde yazılır.
-- [ ] Form gönderimi, doğrulama, rate limit, bot koruması, DB ve e-posta senaryoları test edilir.
+- [x] Klinik bildirim e-postası kişisel veriyi gereksiz yere çoğaltmayacak şekilde tasarlanır. — Serbest not/sağlık bilgisi yok; yalnız referans ve iletişim için gerekli alanlar.
+- [x] Kullanıcıya alındı e-postası gönderilecekse içeriği, açık rızası/hukuki dayanağı ve suistimal riski değerlendirilir. — İlk sürümde kullanıcı e-postası gönderilmeyecek.
+- [x] React Email veya eşdeğer şablon; metin alternatifiyle hazırlanır. — Escape edilmiş minimal HTML + düz metin: `emails/appointment-notification.ts`.
+- [ ] Resend timeout, retry, hata logu ve alarm davranışı uygulanır. — 10 sn timeout, idempotent en fazla 3 deneme, güvenli hata logu hazır; production cron ve alarm bağlantısı bekliyor.
+- [x] Başarı mesajı kesin randevu izlenimi yaratmayacak şekilde yazılır.
+- [ ] Form gönderimi, doğrulama, rate limit, bot koruması, DB ve e-posta senaryoları test edilir. — Şema/origin/rate-limit/e-posta/timeout birim testleri geçti; gerçek PostgreSQL + Resend entegrasyon testleri bekliyor.
 
 ### Çıkış kriterleri
 
@@ -199,19 +199,19 @@
 
 ## 7. Güvenli yönetici kimlik doğrulama ve yetkilendirme
 
-- [ ] Auth.js veya seçilen güncel kimlik doğrulama yaklaşımı belgelenir.
-- [ ] İlk yönetici oluşturma ve erişim kurtarma prosedürü belirlenir.
-- [ ] Parolalı giriş varsa Argon2id/bcrypt parametreleri ve parola politikası belirlenir.
+- [x] Auth.js veya seçilen güncel kimlik doğrulama yaklaşımı belgelenir. — PostgreSQL destekli opak oturum kararı: `docs/admin-authentication.md`.
+- [x] İlk yönetici oluşturma ve erişim kurtarma prosedürü belirlenir. — Tek kullanımlık ortam değişkenli CLI; parola sıfırlama tüm oturumları iptal eder.
+- [x] Parolalı giriş varsa Argon2id/bcrypt parametreleri ve parola politikası belirlenir. — Argon2id `m=19456`, `t=2`, `p=1`; en az 12 karakter, büyük/küçük harf ve rakam.
 - [ ] MFA/passkey seçeneği risk düzeyine göre değerlendirilir ve tercihen uygulanır.
-- [ ] Oturum çerezleri `HttpOnly`, `Secure`, uygun `SameSite`, süre ve rotasyonla yapılandırılır.
-- [ ] Login endpoint’ine rate limit, gecikme/backoff ve genel hata mesajı eklenir.
-- [ ] Kullanıcı varlığını ve parola doğruluğunu sızdıran mesajlardan kaçınılır.
-- [ ] Yönetici rotaları sunucu tarafında middleware’e tek başına güvenmeden korunur.
-- [ ] Her mutation’da yetki kontrolü yapılır.
-- [ ] Açık yönlendirme ve callback URL riskleri engellenir.
-- [ ] Başarılı/başarısız giriş ve kritik admin işlemleri kişisel veri sızdırmadan loglanır.
-- [ ] Oturum kapatma ve tüm oturumları geçersiz kılma akışı hazırlanır.
-- [ ] Production’da demo/varsayılan hesap bulunmadığı doğrulanır.
+- [x] Oturum çerezleri `HttpOnly`, `Secure`, uygun `SameSite`, süre ve rotasyonla yapılandırılır. — Production’da `__Host-`, `Secure`, `HttpOnly`, `SameSite=Lax`; 8 saat mutlak ömür ve her girişte yeni 256-bit belirteç.
+- [x] Login endpoint’ine rate limit, gecikme/backoff ve genel hata mesajı eklenir. — Kimlik 5/15 dk, güvenilir adres 20/15 dk, en az 650 ms yanıt.
+- [x] Kullanıcı varlığını ve parola doğruluğunu sızdıran mesajlardan kaçınılır. — Tek hata mesajı ve bilinmeyen hesapta dummy Argon2id doğrulaması.
+- [x] Yönetici rotaları sunucu tarafında middleware’e tek başına güvenmeden korunur. — `proxy.ts` yalnız ön kontrol; protected layout ve `requireAdmin()` asıl güven sınırı.
+- [x] Her mutation’da yetki kontrolü yapılır. — Ortak `requireAdmin(requiredRole)` politikası tanımlandı; 8. bölümdeki her yeni mutation bunu çağırmak zorunda.
+- [x] Açık yönlendirme ve callback URL riskleri engellenir. — Yalnız yerel `/admin` alt yollarına izin verilir.
+- [x] Başarılı/başarısız giriş ve kritik admin işlemleri kişisel veri sızdırmadan loglanır. — `AuditLog`; parola, belirteç, e-posta ve IP metadata’ya yazılmaz.
+- [x] Oturum kapatma ve tüm oturumları geçersiz kılma akışı hazırlanır. — UI logout, parola sıfırlama ve `admin:revoke-sessions` CLI.
+- [ ] Production’da demo/varsayılan hesap bulunmadığı doğrulanır. — Seed hesap üretmiyor; gerçek production veritabanı yayın öncesi kontrol edilecek.
 
 ### Çıkış kriterleri
 
