@@ -1,6 +1,9 @@
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
 
 import { defineConfig } from "prisma/config";
+
+loadEnv({ path: ".env.local", quiet: true });
+loadEnv({ quiet: true });
 
 const placeholderDatabaseUrl =
   "postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public";

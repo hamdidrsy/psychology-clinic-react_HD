@@ -1,0 +1,3 @@
+ALTER TABLE "Article"
+ADD COLUMN "canonicalUrl" VARCHAR(2048),
+ADD COLUMN "socialImageUrl" VARCHAR(2048);

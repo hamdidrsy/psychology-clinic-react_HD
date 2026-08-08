@@ -221,36 +221,36 @@
 
 ### Genel
 
-- [ ] Güvenli admin layout, navigasyon ve özet ekranı hazırlanır.
-- [ ] Server-side yetkilendirme tüm sayfa, sorgu ve işlemlerde uygulanır.
-- [ ] Liste ekranlarına uygun sayfalama, filtreleme, sıralama ve boş durumlar eklenir.
-- [ ] Kritik/değiştirici işlemlerde açık onay ve başarı/hata geri bildirimi sağlanır.
+- [x] Güvenli admin layout, navigasyon ve özet ekranı hazırlanır. — Rol/kimlik görünümü, iş kuyruğu sayaçları ve mobil uyumlu navigasyon.
+- [x] Server-side yetkilendirme tüm sayfa, sorgu ve işlemlerde uygulanır. — Protected layout’a ek olarak her sayfa ve Server Action kendi `requireAdmin`/`requireContentManager` kontrolünü tekrarlar.
+- [x] Liste ekranlarına uygun sayfalama, filtreleme, sıralama ve boş durumlar eklenir. — Makaleler 15, randevular 20 kayıt/sayfa; en güncel önce.
+- [x] Kritik/değiştirici işlemlerde açık onay ve başarı/hata geri bildirimi sağlanır. — Durum değişikliğinde açık onay; kaydetme başarı/hata durumları erişilebilir mesajlarla gösterilir.
 
 ### Makale yönetimi
 
-- [ ] Makale oluşturma ve düzenleme formu Zod ile doğrulanır.
-- [ ] Taslak, yayınlanmış ve arşiv/yayından kaldırılmış durumları uygulanır.
-- [ ] Slug üretimi, benzersizlik kontrolü ve değişiklikte redirect politikası uygulanır.
-- [ ] İçerik editörü seçilir; Markdown/MDX veya rich text çıktısı güvenli biçimde sanitize edilir.
-- [ ] Başlık hiyerarşisi, bağlantı, görsel alt metni ve önizleme kontrolleri eklenir.
-- [ ] SEO başlığı, açıklama, canonical ve sosyal paylaşım görseli alanları eklenir.
-- [ ] Yayın tarihi/zaman dilimi ve güncellenme tarihi doğru yönetilir.
-- [ ] Görsel yükleme kullanılacaksa tür, boyut, isim, depolama ve kötü amaçlı dosya kontrolleri uygulanır.
-- [ ] Silme yerine arşivleme/soft-delete ihtiyacı değerlendirilir.
+- [x] Makale oluşturma ve düzenleme formu Zod ile doğrulanır. — Ortak şema; alan bazlı hata mesajları ve sunucu tarafı tekrar doğrulama.
+- [x] Taslak, yayınlanmış ve arşiv/yayından kaldırılmış durumları uygulanır.
+- [x] Slug üretimi, benzersizlik kontrolü ve değişiklikte redirect politikası uygulanır. — Türkçe transliterasyon, çakışma eki ve `ArticleSlugRedirect` kaydı.
+- [x] İçerik editörü seçilir; Markdown/MDX veya rich text çıktısı güvenli biçimde sanitize edilir. — Markdown; ham HTML ve tehlikeli URI şemaları reddedilir, önizleme React metin düğümleriyle gösterilir.
+- [x] Başlık hiyerarşisi, bağlantı, görsel alt metni ve önizleme kontrolleri eklenir. — İçerikte ikinci H1 reddedilir; görsel varsa alt metin zorunludur.
+- [x] SEO başlığı, açıklama, canonical ve sosyal paylaşım görseli alanları eklenir. — Prisma alanları ve `20260809100000_add_article_seo_fields` migration’ı.
+- [x] Yayın tarihi/zaman dilimi ve güncellenme tarihi doğru yönetilir. — İlk yayın zamanı korunur; DB UTC, panel Europe/Istanbul.
+- [x] Görsel yükleme kullanılacaksa tür, boyut, isim, depolama ve kötü amaçlı dosya kontrolleri uygulanır. — İlk sürümde dosya yükleme yok; yalnız doğrulanan harici URL, sağlayıcı seçilmeden dosya kabul edilmez.
+- [x] Silme yerine arşivleme/soft-delete ihtiyacı değerlendirilir. — Kalıcı silme arayüzü eklenmedi; `ARCHIVED` kullanılır.
 
 ### Randevu yönetimi
 
-- [ ] Randevu talepleri en yeni öncelikli ve sayfalı listelenir.
-- [ ] Durum, tarih ve gerekli iş filtresi eklenir.
-- [ ] Talep detayı yalnız yetkili kullanıcıya gösterilir.
-- [ ] Durum güncelleme ve gerekli iç not alanı uygulanır; iç notlarda hassas veri sınırı belirtilir.
-- [ ] CSV dışa aktarma gerekiyorsa açık yetki, veri minimizasyonu ve CSV injection koruması uygulanır.
-- [ ] Saklama süresi dolan talepler için silme/anonimleştirme süreci hazırlanır.
-- [ ] Yetkisiz erişim ve kritik durum değişiklikleri için audit trail uygulanır.
+- [x] Randevu talepleri en yeni öncelikli ve sayfalı listelenir. — 20 kayıt/sayfa.
+- [x] Durum, tarih ve gerekli iş filtresi eklenir. — `NEW`/`CONTACTED` işlem gereken kuyruğu.
+- [x] Talep detayı yalnız yetkili kullanıcıya gösterilir. — Randevu verisi yalnız `ADMIN` rolüne açık.
+- [x] Durum güncelleme ve gerekli iç not alanı uygulanır; iç notlarda hassas veri sınırı belirtilir. — 500 karakter sınırı, hassas sağlık verisi uyarısı ve durum geçmişi.
+- [x] CSV dışa aktarma gerekiyorsa açık yetki, veri minimizasyonu ve CSV injection koruması uygulanır. — İlk sürüm gereksiniminde olmadığı için kişisel veriyi çoğaltan dışa aktarım eklenmedi; eklenme koşulları belgelendi.
+- [x] Saklama süresi dolan talepler için silme/anonimleştirme süreci hazırlanır. — Varsayılan dry-run `appointments:purge-expired`; açık production onayı olmadan silmez.
+- [x] Yetkisiz erişim ve kritik durum değişiklikleri için audit trail uygulanır. — Yetkisiz sorgu/mutation sunucu tarafında engellenir; değişiklikler önceki/yeni durum ve aktörle loglanır.
 
 ### Çıkış kriterleri
 
-- [ ] Yetkili yönetici makale yaşam döngüsünü ve randevu iş akışını güvenli, izlenebilir biçimde yönetebilir.
+- [ ] Yetkili yönetici makale yaşam döngüsünü ve randevu iş akışını güvenli, izlenebilir biçimde yönetebilir. — Kod, migration, 30 otomatik test ve build tamam; gerçek yönetici hesabıyla tarayıcı kabul testi bekleniyor.
 
 ## 9. SEO ve keşfedilebilirlik
 

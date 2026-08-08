@@ -17,7 +17,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="tr">
+    <html data-scroll-behavior="smooth" lang="tr">
       <body>
         <a className="skip-link" href="#ana-icerik">
           Ana içeriğe geç

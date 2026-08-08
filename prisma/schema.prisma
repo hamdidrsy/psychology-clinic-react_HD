@@ -91,6 +91,8 @@ model Article {
   coverImageAlt   String?               @db.VarChar(240)
   metaTitle       String?               @db.VarChar(70)
   metaDescription String?               @db.VarChar(170)
+  canonicalUrl    String?               @db.VarChar(2048)
+  socialImageUrl  String?               @db.VarChar(2048)
   status          ArticleStatus         @default(DRAFT)
   publishedAt     DateTime?             @db.Timestamptz(3)
   archivedAt      DateTime?             @db.Timestamptz(3)

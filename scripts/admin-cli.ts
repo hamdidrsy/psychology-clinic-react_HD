@@ -1,10 +1,12 @@
-import "dotenv/config";
-
 import argon2 from "argon2";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { config as loadEnv } from "dotenv";
 
 import { PrismaClient } from "../generated/prisma/client";
 import { adminEmailSchema, adminPasswordSchema } from "../lib/auth/validation";
+
+loadEnv({ path: ".env.local", quiet: true });
+loadEnv({ quiet: true });
 
 export function adminCliInput(options: { requirePassword: boolean }) {
   const databaseUrl = process.env.DATABASE_URL;

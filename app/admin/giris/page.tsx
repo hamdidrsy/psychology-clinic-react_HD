@@ -8,7 +8,7 @@ export default async function AdminLoginPage() {
   if (await getCurrentAdmin()) redirect("/admin");
 
   return (
-    <main className="bg-canvas px-4 py-16 sm:py-24">
+    <main className="admin-login-shell bg-canvas min-h-screen px-4 py-16 sm:py-24">
       <section
         className="border-border mx-auto max-w-md rounded-3xl border bg-white p-6 shadow-sm sm:p-8"
         aria-labelledby="login-title"

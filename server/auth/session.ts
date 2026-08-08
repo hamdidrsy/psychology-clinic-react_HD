@@ -96,6 +96,14 @@ export async function requireAdmin(requiredRole?: AdminRole) {
   return admin;
 }
 
+export async function requireContentManager() {
+  const admin = await requireAdmin();
+  if (admin.role !== "ADMIN" && admin.role !== "EDITOR") {
+    redirect("/admin?yetki=yetersiz");
+  }
+  return admin;
+}
+
 export async function revokeCurrentSession() {
   const cookieStore = await cookies();
   const name = sessionCookieName();

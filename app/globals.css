@@ -41,6 +41,12 @@ html {
   scroll-behavior: smooth;
   scroll-padding-top: 6rem;
 }
+body:has(.admin-shell) > header,
+body:has(.admin-shell) > footer,
+body:has(.admin-login-shell) > header,
+body:has(.admin-login-shell) > footer {
+  display: none;
+}
 body {
   margin: 0;
   background: var(--canvas);
