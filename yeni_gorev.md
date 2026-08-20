@@ -1,8 +1,26 @@
 # Psychology Clinic — Kalan Görevler
 
-Son güncelleme: 9 Ağustos 2026
+Son güncelleme: 20 Ağustos 2026
 
 Bu dosya, projeyi güvenli şekilde canlıya almak ve canlı sonrasında işletmek için kalan işleri içerir. Gizlilik mimarisi tamamlanmadan randevu sistemi production ortamına açılmamalıdır.
+
+## Güncel durum ve buradan devam sırası
+
+Bulunduğumuz aşama: **Şifreli randevu mimarisi ve temel anonim akış tamamlandı; şimdi production öncesi doğrulama ve güvenlik sağlamlaştırması aşamasındayız.** Form tarayıcıda şifreleme yapıyor, PostgreSQL plaintext kimlik alanı tutmuyor, kullanıcı gizli belgeyle durum görebiliyor/iptal edebiliyor, admin kimliği açmadan karar ve zaman önerisi girebiliyor, yüz yüze çözme yalnız tarayıcıda gerçekleşiyor. Son kontrolde 69 birim/entegrasyon testi ve 2 Chromium E2E testi geçti; lint, TypeScript, production build ve npm audit temiz.
+
+Kalan işleri aşağıdaki sırayla ele alacağız:
+
+1. **P0 — Yerel uçtan uca randevu provası:** `TRACKING_HMAC_KEY_V1` tanımlandı; gerçek PostgreSQL üzerinde şifreli oluşturma ve veri sızıntısı E2E testi geçti. Takip, admin onayı, önerilen zaman, iptal ve yüz yüze çözme tarayıcı senaryoları eklenecek.
+2. **P0 — Gizlilik E2E testleri:** Playwright kurulacak; HTTP isteğinde, tarayıcı depolarında, loglarda ve PostgreSQL'de plaintext/anahtar bulunmadığı otomatik olarak kanıtlanacak. Yanlış anahtar, bozuk paket, replay, XSS ve ağ kesintisi senaryoları test edilecek.
+3. **P0 — Yönetici güvenliği:** Randevu açma yetkisi rol bazında sınırlandırılacak, açma olayı içeriksiz audit edilecek, MFA ve oturum iptali production şartı hâline getirilecek.
+4. **P0 — Veri yaşam döngüsü:** Reddedilen/iptal edilen/süresi dolan kayıtların otomatik temizliği, anonim silme talebi, yedek saklama süresi ve geri yükleme/geri alma provası tamamlanacak.
+5. **P0 — Gerçek e-posta provası:** Resend hesabı ve doğrulanmış gönderici alan adı hazırlanacak; production değişkenleri eklenip yalnız anonim yönetici bildiriminin gönderildiği doğrulanacak.
+6. **P0 — Hukuk ve klinik prosedürü:** Çocuk/ergen ve veli/onam akışı, KVKK metinleri, gerçek veri sorumlusu bilgileri, yurt dışı aktarım ve fiziksel klinik kayıt prosedürü hukuk danışmanıyla kesinleştirilecek.
+7. **P1 — Tarayıcı, erişilebilirlik ve performans:** Chrome, Firefox, Safari, Edge, Android ve iPhone testleri; ekran okuyucu/klavye kontrolleri; Lighthouse, axe ve bundle incelemesi yapılacak.
+8. **P1 — Staging ve canlıya alma:** Hosting/PostgreSQL seçilecek; minimum yetki, TLS, farklı ortam anahtarları, staging migration, yedek geri yükleme, alan adı/HTTPS/SEO ve rollback kontrolleri tamamlanacak.
+9. **P2 — Canlı sonrası işletim:** İzleme/alarmlar, zamanlanmış temizlikler, bağımlılık güncellemeleri, periyodik erişim kontrolü ve yıllık kriptografi incelemesi planlanacak.
+
+Bir sonraki uygulanacak iş: **1. adımın devamı — takip, admin onayı, iptal ve yüz yüze çözme E2E senaryoları.** Dış uzman ve hukuk onayı gerektiren maddeler teknik çalışmayı engellemez ancak production açılışını engeller. Aşağıdaki ayrıntılı listeler kanıt oluştukça tek tek işaretlenecektir.
 
 ## 0. Gizlilik Öncelik Planı — Şifreli ve Kimlik Gizleyen Randevu Sistemi
 
@@ -75,7 +93,7 @@ Bu tablo uygulama başlamadan önce sabitlenecek mimari sözleşmedir. `Önerild
 - [x] P0-K15 acil durum yönlendirmesi güvenli varsayılan olarak kabul edildi. — Form/takip ekranı 112 ve en yakın acil servise yönlendirecek.
 - [x] Yerel veritabanı yalnız sayısal/metadata sorgusuyla denetlendi. — Tek test kaydı açık onayla silindi; tekrar denetimde toplam ve tüm plaintext alan sayıları `0`.
 - [ ] Hukuk danışmanına sunulacak karar özeti onaylandı.
-- [ ] Kararlar sabitlendikten sonra P0 tehdit modeli aşamasına geçiş onayı verildi.
+- [x] Kararlar sabitlendikten sonra P0 tehdit modeli aşamasına geçiş onayı verildi ve çalışma tamamlandı.
 
 ### Hedef gizlilik seviyesi
 
@@ -444,7 +462,7 @@ Kriptografik mimari uygulama durumu:
 - [x] Sabit test materyaliyle interoperability ciphertext SHA-256 vektörü kaydedildi.
 - [x] Türkçe round-trip, sabit 2064 byte çıktı, bağımsız rastgele sırlar, tekrar şifrelemede farklı çıktı, yanlış key ve ciphertext/IV/AAD oynama testleri geçti.
 - [x] Ağ zarfında plaintext ve AES anahtarı bulunmadığı negatif test edildi.
-- [ ] Recovery dosyası indirme/yazdırma arayüzü, browser storage E2E testi, Server Action/Prisma entegrasyonu ve yüz yüze decrypt ekranı henüz uygulanmadı.
+- [x] Recovery indirme/yazdırma, Server Action/Prisma entegrasyonu, yüz yüze decrypt ekranı ve Chromium browser-storage/ağ/DB E2E kanıtı tamamlandı.
 - [ ] Chrome, Firefox, Safari ve Edge gerçek tarayıcı testleri ile bağımsız uzman incelemesi henüz yapılmadı.
 
 Kriptografik mimari çıkış notu: **Sürüm 1 sözleşmesi, şifreli başvuru, anonim takip ve tarayıcıda yüz yüze açma akışları entegre edildi; son doğrulamada 65 test, typecheck, lint ve production build geçti.** Bağımsız güvenlik incelemesi, hukuk onayı ve aşağıdaki açık production kapıları tamamlanmadan form canlıya açılamaz.
@@ -467,7 +485,7 @@ Kriptografik mimari çıkış notu: **Sürüm 1 sözleşmesi, şifreli başvuru,
 - [x] Takip ekranı ad, telefon, e-posta veya şifreli paketin kendisini göstermez.
 - [x] Kullanıcı onaylanan zaman bilgisini takip ekranında görür.
 - [ ] Randevu değişikliği gerekiyorsa kimlik açmadan yeni zaman önerme akışı tasarlanır.
-- [ ] Kullanıcı kendi başvurusunu takip sırrıyla iptal edebilir; işlem audit kaydına anonim olarak yazılır.
+- [x] Kullanıcı kendi başvurusunu takip sırrıyla iptal edebilir; durum geçmişi ve kimliksiz audit kaydı atomik olarak yazılır.
 - [x] Tarayıcı JavaScript/Web Crypto desteklemiyorsa açık veri gönderilmez; form güvenli biçimde durur.
 - [x] Şifreleme başarısız olursa otomatik olarak şifresiz gönderime düşülmez.
 - [x] Ağ kesintisi ve tekrar gönderimde aynı şifreli başvurunun çoğalmasını engelleyen idempotency uygulanır.
@@ -537,10 +555,10 @@ Kriptografik mimari çıkış notu: **Sürüm 1 sözleşmesi, şifreli başvuru,
 - [ ] IV veya additional authenticated data değiştirildiğinde açmanın başarısız olduğu test edilir.
 - [ ] Türkçe karakter, emoji, uzun metin ve boş isteğe bağlı alanlar round-trip testine alınır.
 - [ ] Maksimum paket boyutu ve aşırı büyük ciphertext reddi test edilir.
-- [ ] Anahtar, plaintext ad, telefon ve e-postanın HTTP request payload'ında bulunmadığı Playwright ile doğrulanır.
+- [x] Anahtar, plaintext ad, telefon ve e-postanın HTTP request payload'ında bulunmadığı Playwright ile doğrulandı.
 - [ ] Anahtar ve plaintext'in server loglarında bulunmadığı test ortamında yakalanıp doğrulanır.
-- [ ] Anahtar ve plaintext'in PostgreSQL kolonlarında bulunmadığı entegrasyon testiyle doğrulanır.
-- [ ] Anahtarın localStorage, sessionStorage, cookie, IndexedDB ve browser history'ye yazılmadığı E2E test edilir.
+- [x] Anahtar ve plaintext'in PostgreSQL kaydında bulunmadığı entegrasyon/E2E testiyle doğrulandı.
+- [x] Anahtarın localStorage, sessionStorage, cookie, IndexedDB ve browser URL'sine yazılmadığı Chromium E2E testiyle doğrulandı.
 - [ ] Takip kodu enumeration ve brute-force testleri yapılır.
 - [ ] Admin panelinin ciphertext'i HTML'e kontrolsüz basmadığı doğrulanır.
 - [ ] XSS deneme payload'larının şifreleme öncesi ve çözme sonrası güvenli metin olarak işlendiği test edilir.
@@ -611,15 +629,15 @@ Kriptografik mimari çıkış notu: **Sürüm 1 sözleşmesi, şifreli başvuru,
 
 ### Gizlilik mimarisi çıkış kriterleri
 
-- [ ] Ağ kaydında hassas alanların açık hâli bulunmuyor.
-- [ ] Veritabanında hassas alanların açık hâli veya çözme anahtarı bulunmuyor.
+- [x] Chromium E2E ağ kaydında hassas alanların açık hâli veya çözme anahtarı bulunmuyor.
+- [x] PostgreSQL gizlilik denetiminde hassas alanların açık hâli veya çözme anahtarı bulunmuyor.
 - [ ] Sunucu ve yönetici, kullanıcı anahtarı olmadan ciphertext'i çözemiyor.
 - [ ] Yönetici kimliği görmeden talebi onaylayıp reddedebiliyor.
-- [ ] Kullanıcı takip sırrıyla onay durumunu güvenli biçimde görebiliyor.
+- [x] Kullanıcı takip sırrıyla onay durumunu ve önerilen zamanı güvenli biçimde görebiliyor.
 - [ ] Yüz yüze açma yalnız tarayıcıda gerçekleşiyor ve açık veri tekrar kaydedilmiyor.
 - [ ] Anahtar kaybı, yanlış anahtar ve bozuk veri senaryoları güvenli biçimde sonuçlanıyor.
 - [ ] Log, e-posta, analitik, audit ve hata izleme sistemlerine açık hassas veri gitmiyor.
-- [ ] Eski plaintext veri modeli kaldırılmış veya kontrollü geçiş/silme tamamlanmış.
+- [x] Eski plaintext veri modeli kaldırıldı; onaylanan yerel test kaydı silindi ve şema denetimi geçti.
 - [ ] Otomatik testler, E2E testleri, bağımsız güvenlik incelemesi ve hukuk onayı tamamlanmış.
 - [ ] Kullanıcı metinleri sistemin sağlayamadığı bir gizlilik garantisi vermiyor.
 
@@ -637,7 +655,7 @@ Teknik referanslar: [OWASP Cryptographic Storage Cheat Sheet](https://cheatsheet
 
 ## 2. Otomatik testlerin tamamlanması
 
-- [ ] Playwright veya Cypress kurulur.
+- [x] Playwright ve yerel Chromium test tarayıcısı kuruldu; Windows'ta temiz kapanan test runner eklendi.
 - [ ] Ana sayfa ve temel navigasyon için E2E testi yazılır.
 - [ ] Randevu formunun başarılı ve hatalı gönderim E2E testleri yazılır.
 - [ ] Yönetici giriş, çıkış ve başarısız giriş E2E testleri yazılır.

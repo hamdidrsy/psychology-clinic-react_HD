@@ -3,6 +3,8 @@
 import { startTransition, useActionState, useState } from "react";
 
 import {
+  cancelAppointment,
+  type CancellationState,
   trackAppointment,
   type TrackingState,
 } from "@/app/randevu-takip/actions";
@@ -11,11 +13,16 @@ import { appointmentStatusLabels } from "@/lib/admin/appointment-schema";
 import { validateRecoveryV1 } from "@/lib/appointments/crypto";
 
 const initialState: TrackingState = { status: "idle" };
+const initialCancellationState: CancellationState = { status: "idle" };
 
 export function AppointmentTracker() {
   const [state, action, pending] = useActionState(
     trackAppointment,
     initialState,
+  );
+  const [cancellation, cancelAction, cancellationPending] = useActionState(
+    cancelAppointment,
+    initialCancellationState,
   );
   const [recovery, setRecovery] = useState<ReturnType<
     typeof validateRecoveryV1
@@ -93,6 +100,48 @@ export function AppointmentTracker() {
             Önerilen randevu:{" "}
             {state.proposedAppointmentAt ?? "Henüz belirlenmedi"}
           </p>
+        </Alert>
+      )}
+      {state.status === "found" &&
+        ["PENDING", "APPROVED"].includes(state.appointmentStatus ?? "") &&
+        cancellation.status !== "cancelled" && (
+          <div className="border-danger/30 rounded-2xl border p-5">
+            <h3 className="font-semibold">Talebi iptal et</h3>
+            <p className="text-ink-muted mt-2 text-sm leading-6">
+              İptal işlemi geri alınamaz. Gerekirse yeni bir talep oluşturmanız
+              gerekir.
+            </p>
+            <button
+              className="button-secondary mt-4"
+              disabled={!recovery || cancellationPending}
+              onClick={() => {
+                if (
+                  !recovery ||
+                  !window.confirm(
+                    "Bu randevu talebini iptal etmek istediğinizden emin misiniz?",
+                  )
+                ) {
+                  return;
+                }
+                const data = new FormData();
+                data.set("requestId", recovery.requestId);
+                data.set("trackingSecret", recovery.trackingSecret);
+                startTransition(() => cancelAction(data));
+              }}
+              type="button"
+            >
+              {cancellationPending ? "İptal ediliyor…" : "Talebimi iptal et"}
+            </button>
+          </div>
+        )}
+      {cancellation.status === "error" && (
+        <Alert title="İptal edilemedi" variant="error">
+          {cancellation.message}
+        </Alert>
+      )}
+      {cancellation.status === "cancelled" && (
+        <Alert title="Talep iptal edildi" variant="success">
+          {cancellation.message}
         </Alert>
       )}
     </section>
