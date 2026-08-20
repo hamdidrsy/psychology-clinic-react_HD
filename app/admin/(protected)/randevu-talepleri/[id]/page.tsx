@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { AdminAppointmentStatusForm } from "@/components/admin-appointment-status-form";
+import { AppointmentDecryptor } from "@/components/appointment-decryptor";
 import { appointmentStatusLabels } from "@/lib/admin/appointment-schema";
 import { formatDateTime } from "@/lib/format-date";
 import { writeAuditLog } from "@/server/audit";
@@ -18,7 +19,7 @@ export default async function AppointmentRequestDetailPage({
   const request = await getDb().appointmentRequest.findUnique({
     where: { id: (await params).id },
     include: {
-      service: { select: { name: true } },
+      service: { select: { name: true, slug: true } },
       statusHistory: {
         orderBy: { createdAt: "desc" },
         include: { changedByAdmin: { select: { displayName: true } } },
@@ -28,35 +29,31 @@ export default async function AppointmentRequestDetailPage({
   if (!request) notFound();
   await writeAuditLog({
     actorAdminId: admin.id,
-    action: "APPOINTMENT_VIEWED",
+    action: "ANONYMOUS_APPOINTMENT_VIEWED",
     entityType: "AppointmentRequest",
     entityId: request.id,
   });
-  const saved = (await searchParams).saved;
   const details = [
-    ["Referans", request.referenceCode],
-    ["Ad soyad", request.fullName],
-    ["E-posta", request.email ?? "—"],
-    ["Telefon", request.phone ?? "—"],
-    [
-      "Tercih edilen kanal",
-      request.preferredContactMethod === "EMAIL" ? "E-posta" : "Telefon",
-    ],
-    ["Uygun zaman", request.preferredContactTime ?? "—"],
+    ["Anonim başvuru kodu", request.requestId],
     ["Hizmet", request.service?.name ?? "Belirtilmedi"],
+    ["Zaman tercihi", request.timePreference],
+    ["Durum", appointmentStatusLabels[request.status]],
     ["Oluşturulma", formatDateTime(request.createdAt)],
+    [
+      "Önerilen randevu",
+      request.proposedAppointmentAt
+        ? formatDateTime(request.proposedAppointmentAt)
+        : "Henüz önerilmedi",
+    ],
     ["Saklama bitişi", formatDateTime(request.retentionExpiresAt)],
   ];
   return (
     <main className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1.4fr_1fr]">
       <section>
-        <p className="eyebrow">{request.referenceCode}</p>
-        <h1 className="text-3xl font-bold">Randevu talebi</h1>
-        {saved && (
-          <p
-            className="mt-4 rounded-xl border border-green-200 bg-green-50 p-3 text-green-800"
-            role="status"
-          >
+        <p className="eyebrow">{request.requestId}</p>
+        <h1 className="text-3xl font-bold">Anonim randevu talebi</h1>
+        {(await searchParams).saved && (
+          <p className="mt-4 rounded-xl border border-green-200 bg-green-50 p-3 text-green-800">
             Durum başarıyla güncellendi.
           </p>
         )}
@@ -70,11 +67,22 @@ export default async function AppointmentRequestDetailPage({
             </div>
           ))}
         </dl>
-        <div className="border-border mt-6 rounded-2xl border bg-white p-5">
-          <h2 className="font-bold">Kullanıcının notu</h2>
-          <p className="text-ink-muted mt-3 whitespace-pre-wrap">
-            {request.note ?? "Not bırakılmadı."}
-          </p>
+        <div className="mt-6">
+          <AppointmentDecryptor
+            encryptedRecord={{
+              envelopeSchema:
+                request.envelopeSchema as "pc-hd-appointment-envelope/v1",
+              algorithm: request.encryptionAlgorithm as "AES-256-GCM",
+              requestId: request.requestId,
+              payloadSchema:
+                request.payloadSchema as "pc-hd-appointment-payload/v1",
+              iv: request.encryptionIv,
+              ciphertext: request.encryptedPayload,
+              serviceSlug: request.service?.slug ?? null,
+              timePreference: request.timePreference,
+              privacyNoticeVersion: request.privacyNoticeVersion,
+            }}
+          />
         </div>
         <div className="mt-6">
           <h2 className="text-xl font-bold">Durum geçmişi</h2>
@@ -89,9 +97,6 @@ export default async function AppointmentRequestDetailPage({
                   {formatDateTime(item.createdAt)} ·{" "}
                   {item.changedByAdmin?.displayName ?? "Sistem"}
                 </p>
-                {item.operationalNote && (
-                  <p className="mt-2 text-sm">{item.operationalNote}</p>
-                )}
               </li>
             ))}
           </ol>

@@ -125,13 +125,7 @@ export async function retryPendingAppointmentNotifications(limit = 20) {
       appointmentRequest: {
         select: {
           id: true,
-          referenceCode: true,
-          fullName: true,
-          preferredContactMethod: true,
-          email: true,
-          phone: true,
           createdAt: true,
-          service: { select: { name: true } },
         },
       },
     },
@@ -145,12 +139,6 @@ export async function retryPendingAppointmentNotifications(limit = 20) {
         notificationId: notification.id,
         requestId: request.id,
         templateInput: {
-          referenceCode: request.referenceCode,
-          fullName: request.fullName,
-          preferredContactMethod: request.preferredContactMethod,
-          email: request.email ?? undefined,
-          phone: request.phone ?? undefined,
-          serviceName: request.service?.name,
           createdAt: request.createdAt,
         },
       }),

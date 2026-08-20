@@ -39,11 +39,7 @@ export default async function AppointmentRequestsPage({
       ? new Date(`${params.to}T23:59:59+03:00`)
       : undefined;
   const where: Prisma.AppointmentRequestWhereInput = {
-    ...(status
-      ? { status }
-      : needsAction
-        ? { status: { in: ["NEW", "CONTACTED"] } }
-        : {}),
+    ...(status ? { status } : needsAction ? { status: "PENDING" } : {}),
     ...(from || to
       ? {
           createdAt: {
@@ -62,9 +58,9 @@ export default async function AppointmentRequestsPage({
       take: pageSize,
       select: {
         id: true,
-        referenceCode: true,
-        fullName: true,
-        preferredContactMethod: true,
+        requestId: true,
+        timePreference: true,
+        service: { select: { name: true } },
         status: true,
         createdAt: true,
       },
@@ -154,9 +150,9 @@ export default async function AppointmentRequestsPage({
             <thead className="bg-surface-muted">
               <tr>
                 <th className="p-4">Referans</th>
-                <th className="p-4">Ad</th>
+                <th className="p-4">Hizmet</th>
                 <th className="p-4">Durum</th>
-                <th className="p-4">Kanal</th>
+                <th className="p-4">Zaman tercihi</th>
                 <th className="p-4">Tarih</th>
                 <th className="p-4">
                   <span className="sr-only">İşlem</span>
@@ -166,18 +162,14 @@ export default async function AppointmentRequestsPage({
             <tbody>
               {requests.map((request) => (
                 <tr className="border-border border-t" key={request.id}>
-                  <td className="p-4 font-mono text-xs">
-                    {request.referenceCode}
+                  <td className="p-4 font-mono text-xs">{request.requestId}</td>
+                  <td className="p-4 font-bold">
+                    {request.service?.name ?? "Belirtilmedi"}
                   </td>
-                  <td className="p-4 font-bold">{request.fullName}</td>
                   <td className="p-4">
                     {appointmentStatusLabels[request.status]}
                   </td>
-                  <td className="p-4">
-                    {request.preferredContactMethod === "EMAIL"
-                      ? "E-posta"
-                      : "Telefon"}
-                  </td>
+                  <td className="p-4">{request.timePreference}</td>
                   <td className="p-4">{formatDateTime(request.createdAt)}</td>
                   <td className="p-4">
                     <Link

@@ -3,11 +3,11 @@ import { describe, expect, it } from "vitest";
 import { appointmentUpdateSchema } from "@/lib/admin/appointment-schema";
 
 describe("appointment admin schema", () => {
-  it("accepts known states and limited operational notes", () => {
+  it("requires a proposed time when approving", () => {
     expect(
       appointmentUpdateSchema.safeParse({
-        status: "CONTACTED",
-        operationalNote: "Telefonla dönüş bekleniyor.",
+        status: "APPROVED",
+        proposedAppointmentAt: "2026-08-20T14:30",
       }).success,
     ).toBe(true);
     expect(
@@ -15,9 +15,11 @@ describe("appointment admin schema", () => {
     ).toBe(false);
     expect(
       appointmentUpdateSchema.safeParse({
-        status: "CLOSED",
-        operationalNote: "x".repeat(501),
+        status: "APPROVED",
       }).success,
     ).toBe(false);
+    expect(
+      appointmentUpdateSchema.safeParse({ status: "REJECTED" }).success,
+    ).toBe(true);
   });
 });

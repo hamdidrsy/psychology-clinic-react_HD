@@ -25,15 +25,17 @@ export default function KvkkPage() {
       </p>
       <h2>2. İşlenen veri kategorileri ve toplama yöntemi</h2>
       <p>
-        Elektronik randevu formuyla ad soyad, sağlanan e-posta ve/veya telefon,
-        iletişim tercihi, isteğe bağlı hizmet/zaman tercihi ve kısa not alınır.
-        Aydınlatma sürümü ile teyit zamanı da kaydedilir.
+        Ad soyad, sağlanan e-posta ve/veya telefon kullanıcının tarayıcısında
+        şifrelenir; uygulama sunucusu ve klinik bu alanları yüz yüze anahtar
+        sunumundan önce açık biçimde göremez. Hizmet kategorisi, geniş zaman
+        tercihi, anonim başvuru kodu, durum ve işlem zamanları açık metadata
+        olarak tutulur. Serbest not alınmaz.
       </p>
       <p>
-        Güvenlik için ham IP yerine süreli ve geri döndürülemez özetler; tekrar
-        gönderimi önlemek için idempotency özeti tutulabilir. Form hasta dosyası
-        veya kesin randevu değildir. Tanı, sağlık öyküsü, kimlik ve ödeme
-        bilgisi istenmez.
+        Güvenlik için güvenilir proxy ortamında ham IP yerine kısa süreli özet;
+        tekrar gönderimi önlemek için idempotency özeti ve anonim takip için
+        takip sırrının özeti tutulabilir. Çözme anahtarı klinik veya sunucu
+        tarafından saklanmaz. Form hasta dosyası veya kesin randevu değildir.
       </p>
       <h2>3. Amaçlar ve hukuki sebepler</h2>
       <p>
@@ -49,10 +51,12 @@ export default function KvkkPage() {
       </p>
       <h2>4. Alıcılar ve aktarım</h2>
       <p>
-        Yetkili klinik yöneticileri, seçilecek PostgreSQL/hosting sağlayıcısı ve
-        bildirim etkinse Resend veri akışına dahil olabilir. Sağlayıcı,
-        ülke/bölge, sözleşme ve yurt dışı aktarım mekanizması tamamlanmadan
-        production aktarımı etkinleştirilmemelidir.
+        Yetkili klinik yöneticileri yalnız sınırlı metadata ve şifreli pakete;
+        seçilecek PostgreSQL/hosting sağlayıcısı şifreli paket ve metadata
+        alanına erişebilir. Resend yalnız kimlik, takip sırrı ve ciphertext
+        içermeyen genel yeni-talep bildirimi alır. Sağlayıcı, ülke/bölge,
+        sözleşme ve yurt dışı aktarım mekanizması tamamlanmadan production
+        aktarımı etkinleştirilmemelidir.
       </p>
       <h2>5. Saklama</h2>
       <p>

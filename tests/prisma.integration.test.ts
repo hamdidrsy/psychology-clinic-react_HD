@@ -67,16 +67,19 @@ suite("Prisma/PostgreSQL integration", () => {
     const idempotencyKeyHash = marker.padEnd(64, "0");
     const appointment = await prisma.appointmentRequest.create({
       data: {
-        referenceCode: `HD-TEST-${marker.toUpperCase()}`,
-        fullName: "Integration Person",
-        email: `person-${marker}@example.test`,
-        preferredContactMethod: "EMAIL",
+        requestId: `AAAAAAAAAAAAAAAAAA${marker}`.toUpperCase(),
+        encryptedPayload: "encrypted-test-payload",
+        encryptionIv: "AAAAAAAAAAAAAAAA",
+        encryptionAlgorithm: "AES-256-GCM",
+        envelopeSchema: "pc-hd-appointment-envelope/v1",
+        payloadSchema: "pc-hd-appointment-payload/v1",
+        trackingSecretHash: "1".repeat(64),
         privacyNoticeVersion: "integration-test",
         privacyAcknowledgedAt: new Date(),
         idempotencyKeyHash,
         retentionExpiresAt: new Date(Date.now() + 86_400_000),
         notifications: { create: { status: "PENDING" } },
-        statusHistory: { create: { toStatus: "NEW" } },
+        statusHistory: { create: { toStatus: "PENDING" } },
       },
       include: { notifications: true, statusHistory: true },
     });
@@ -85,10 +88,13 @@ suite("Prisma/PostgreSQL integration", () => {
     await expect(
       prisma.appointmentRequest.create({
         data: {
-          referenceCode: `HD-DUPE-${marker.toUpperCase()}`,
-          fullName: "Duplicate Person",
-          email: `duplicate-${marker}@example.test`,
-          preferredContactMethod: "EMAIL",
+          requestId: `BBBBBBBBBBBBBBBBBB${marker}`.toUpperCase(),
+          encryptedPayload: "encrypted-duplicate-payload",
+          encryptionIv: "BBBBBBBBBBBBBBBB",
+          encryptionAlgorithm: "AES-256-GCM",
+          envelopeSchema: "pc-hd-appointment-envelope/v1",
+          payloadSchema: "pc-hd-appointment-payload/v1",
+          trackingSecretHash: "2".repeat(64),
           privacyNoticeVersion: "integration-test",
           privacyAcknowledgedAt: new Date(),
           idempotencyKeyHash,

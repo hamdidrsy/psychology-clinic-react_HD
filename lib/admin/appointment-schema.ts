@@ -1,29 +1,38 @@
 import { z } from "zod";
 
 export const appointmentStatuses = [
-  "NEW",
-  "CONTACTED",
-  "SCHEDULED",
-  "CLOSED",
-  "CANCELLED_OR_UNSUITABLE",
+  "PENDING",
+  "APPROVED",
+  "REJECTED",
+  "CANCELLED",
+  "EXPIRED",
+  "COMPLETED",
 ] as const;
 
 export const appointmentStatusLabels = {
-  NEW: "Yeni",
-  CONTACTED: "İletişime geçildi",
-  SCHEDULED: "Planlandı",
-  CLOSED: "Kapatıldı",
-  CANCELLED_OR_UNSUITABLE: "İptal / uygun değil",
+  PENDING: "Onay bekliyor",
+  APPROVED: "Onaylandı",
+  REJECTED: "Reddedildi",
+  CANCELLED: "Kullanıcı iptal etti",
+  EXPIRED: "Süresi doldu",
+  COMPLETED: "Tamamlandı",
 } satisfies Record<(typeof appointmentStatuses)[number], string>;
 
-export const appointmentUpdateSchema = z.object({
-  status: z.enum(appointmentStatuses),
-  operationalNote: z
-    .string()
-    .trim()
-    .max(500, "İç not en fazla 500 karakter olabilir.")
-    .optional(),
-});
+export const appointmentUpdateSchema = z
+  .object({
+    status: z.enum(appointmentStatuses),
+    proposedAppointmentAt: z.preprocess(
+      (value) => (value === "" ? undefined : value),
+      z.iso.datetime({ local: true }).optional(),
+    ),
+  })
+  .refine(
+    (value) => value.status !== "APPROVED" || value.proposedAppointmentAt,
+    {
+      path: ["proposedAppointmentAt"],
+      message: "Onay için tarih ve saat zorunludur.",
+    },
+  );
 
 export type AppointmentUpdateState = {
   status: "idle" | "error";

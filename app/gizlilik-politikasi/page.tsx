@@ -17,21 +17,24 @@ export default function PrivacyPage() {
     >
       <h2>Toplanan bilgiler</h2>
       <p>
-        Site, randevu talebi gönderilmedikçe doğrudan kimlik veya iletişim
-        bilgisi istemez. Form yalnız iletişim için gerekli alanları toplar;
-        sağlık, kimlik ve ödeme bilgisi istenmez.
+        Randevu formundaki ad, e-posta ve telefon gönderilmeden önce
+        kullanıcının tarayıcısında AES-GCM ile şifrelenir. Sunucu yalnız şifreli
+        paket ile hizmet/zaman gibi sınırlı metadata bilgisini alır. Serbest
+        not, sağlık öyküsü, kimlik ve ödeme bilgisi istenmez.
       </p>
       <h2>Teknik kayıtlar</h2>
       <p>
         Rate limit anahtarları ve kısa süreli kötüye kullanım özetleri geri
         döndürülemez biçimde tutulur. Parola, oturum belirteci, tam form
-        gövdesi, serbest not, e-posta ve telefon uygulama loglarına yazılmaz.
+        gövdesi, ciphertext, çözme anahtarı, takip sırrı, e-posta ve telefon
+        uygulama loglarına yazılmaz.
       </p>
       <h2>Güvenlik</h2>
       <p>
-        Aktarım şifrelemesi, güvenli yönetici oturumu, rol kontrolü, rate limit,
-        veri minimizasyonu, denetim kaydı ve süreli silme uygulanır. Hiçbir
-        internet sistemi için mutlak güvenlik garantisi verilemez.
+        Tarayıcıda doğrulanmış şifreleme, HTTPS, güvenli yönetici oturumu, rol
+        kontrolü, rate limit, veri minimizasyonu, denetim kaydı ve süreli silme
+        uygulanır. Çözme anahtarının iki kopyası yalnız kullanıcıda kalır.
+        Hiçbir internet sistemi için mutlak güvenlik garantisi verilemez.
       </p>
       <h2>Üçüncü taraflar ve yurt dışı aktarım</h2>
       <p>

@@ -20,16 +20,19 @@ enum ArticleStatus {
 }
 
 enum AppointmentStatus {
-  NEW
-  CONTACTED
-  SCHEDULED
-  CLOSED
-  CANCELLED_OR_UNSUITABLE
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  EXPIRED
+  COMPLETED
 }
 
-enum ContactMethod {
-  EMAIL
-  PHONE
+enum AppointmentTimePreference {
+  NONE
+  WEEKDAY_09_12
+  WEEKDAY_12_17
+  WEEKDAY_AFTER_17
 }
 
 enum NotificationStatus {
@@ -135,33 +138,34 @@ model Service {
 }
 
 model AppointmentRequest {
-  id                     String                     @id @default(uuid()) @db.Uuid
-  referenceCode          String                     @unique @db.VarChar(24)
-  fullName               String                     @db.VarChar(120)
-  email                  String?                    @db.VarChar(254)
-  phone                  String?                    @db.VarChar(32)
-  preferredContactMethod ContactMethod
-  preferredContactTime   String?                    @db.VarChar(80)
-  note                   String?                    @db.VarChar(1000)
-  status                 AppointmentStatus          @default(NEW)
-  privacyNoticeVersion   String                     @db.VarChar(32)
-  privacyAcknowledgedAt  DateTime                   @db.Timestamptz(3)
-  idempotencyKeyHash     String                     @unique @db.VarChar(64)
-  requestFingerprintHash String?                    @db.VarChar(64)
-  fingerprintExpiresAt   DateTime?                  @db.Timestamptz(3)
-  serviceId              String?                    @db.Uuid
-  createdAt              DateTime                   @default(now()) @db.Timestamptz(3)
-  updatedAt              DateTime                   @updatedAt @db.Timestamptz(3)
-  closedAt               DateTime?                  @db.Timestamptz(3)
-  retentionExpiresAt     DateTime                   @db.Timestamptz(3)
-  service                Service?                   @relation(fields: [serviceId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  notifications          AppointmentNotification[]
-  statusHistory          AppointmentStatusHistory[]
+  id                    String                     @id @default(uuid()) @db.Uuid
+  requestId             String                     @unique @db.VarChar(26)
+  encryptedPayload      String                     @db.Text
+  encryptionIv          String                     @db.VarChar(16)
+  encryptionAlgorithm   String                     @db.VarChar(20)
+  envelopeSchema        String                     @db.VarChar(64)
+  payloadSchema         String                     @db.VarChar(64)
+  trackingSecretHash    String                     @db.VarChar(64)
+  trackingKeyVersion    Int                        @default(1) @db.SmallInt
+  idempotencyKeyHash    String                     @unique @db.VarChar(64)
+  timePreference        AppointmentTimePreference  @default(NONE)
+  status                AppointmentStatus          @default(PENDING)
+  proposedAppointmentAt DateTime?                  @db.Timestamptz(3)
+  privacyNoticeVersion  String                     @db.VarChar(64)
+  privacyAcknowledgedAt DateTime                   @db.Timestamptz(3)
+  serviceId             String?                    @db.Uuid
+  createdAt             DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime                   @updatedAt @db.Timestamptz(3)
+  closedAt              DateTime?                  @db.Timestamptz(3)
+  retentionExpiresAt    DateTime                   @db.Timestamptz(3)
+  service               Service?                   @relation(fields: [serviceId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  notifications         AppointmentNotification[]
+  statusHistory         AppointmentStatusHistory[]
 
   @@index([serviceId])
   @@index([status, createdAt(sort: Desc)])
   @@index([retentionExpiresAt])
-  @@index([requestFingerprintHash, fingerprintExpiresAt])
+  @@index([trackingSecretHash])
 }
 
 model AppointmentStatusHistory {
@@ -170,7 +174,6 @@ model AppointmentStatusHistory {
   fromStatus           AppointmentStatus?
   toStatus             AppointmentStatus
   changedByAdminId     String?            @db.Uuid
-  operationalNote      String?            @db.VarChar(500)
   createdAt            DateTime           @default(now()) @db.Timestamptz(3)
   appointmentRequest   AppointmentRequest @relation(fields: [appointmentRequestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   changedByAdmin       AdminUser?         @relation(fields: [changedByAdminId], references: [id], onDelete: SetNull, onUpdate: Cascade)

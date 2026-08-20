@@ -24,7 +24,13 @@ const nextConfig: NextConfig = {
         value: "max-age=63072000; includeSubDomains; preload",
       });
     }
-    return [{ source: "/(.*)", headers }];
+    return [
+      { source: "/(.*)", headers },
+      {
+        source: "/randevu-takip",
+        headers: [{ key: "Cache-Control", value: "no-store, max-age=0" }],
+      },
+    ];
   },
 };
 

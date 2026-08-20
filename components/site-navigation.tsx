@@ -10,6 +10,7 @@ const navigation = [
   { href: "/makaleler", label: "Makaleler" },
   { href: "/sik-sorulan-sorular", label: "Sık Sorulanlar" },
   { href: "/iletisim", label: "İletişim" },
+  { href: "/randevu-takip", label: "Talep Takibi" },
 ] as const;
 
 function isCurrentPath(pathname: string, href: string) {

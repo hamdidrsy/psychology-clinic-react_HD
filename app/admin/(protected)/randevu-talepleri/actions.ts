@@ -18,7 +18,7 @@ export async function updateAppointmentStatus(
   const admin = await requireAdmin("ADMIN");
   const parsed = appointmentUpdateSchema.safeParse({
     status: formData.get("status"),
-    operationalNote: formData.get("operationalNote") || undefined,
+    proposedAppointmentAt: formData.get("proposedAppointmentAt") || undefined,
   });
   if (!parsed.success)
     return {
@@ -38,7 +38,12 @@ export async function updateAppointmentStatus(
       where: { id: appointmentId },
       data: {
         status: parsed.data.status,
-        closedAt: ["CLOSED", "CANCELLED_OR_UNSUITABLE"].includes(
+        proposedAppointmentAt: parsed.data.proposedAppointmentAt
+          ? new Date(parsed.data.proposedAppointmentAt)
+          : current.status === "APPROVED"
+            ? null
+            : undefined,
+        closedAt: ["REJECTED", "CANCELLED", "EXPIRED", "COMPLETED"].includes(
           parsed.data.status,
         )
           ? now
@@ -48,7 +53,6 @@ export async function updateAppointmentStatus(
             fromStatus: current.status,
             toStatus: parsed.data.status,
             changedByAdminId: admin.id,
-            operationalNote: parsed.data.operationalNote,
           },
         },
       },
@@ -62,7 +66,7 @@ export async function updateAppointmentStatus(
         metadata: {
           fromStatus: current.status,
           toStatus: parsed.data.status,
-          hasOperationalNote: Boolean(parsed.data.operationalNote),
+          hasProposedAppointmentAt: Boolean(parsed.data.proposedAppointmentAt),
         },
       },
     }),

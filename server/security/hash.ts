@@ -11,3 +11,10 @@ export function privacyPreservingHash(value: string, secret?: string) {
     ? createHmac("sha256", secret).update(value).digest("hex")
     : sha256(value);
 }
+
+export function appointmentTrackingHash(secretValue: string, key: string) {
+  return createHmac("sha256", key)
+    .update("appointment-tracking/v1\0")
+    .update(secretValue)
+    .digest("hex");
+}

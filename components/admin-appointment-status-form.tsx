@@ -56,18 +56,15 @@ export function AdminAppointmentStatusForm({
         </select>
       </div>
       <div>
-        <label className="form-label" htmlFor="operationalNote">
-          İç operasyon notu
+        <label className="form-label" htmlFor="proposedAppointmentAt">
+          Önerilen kesin tarih ve saat
         </label>
-        <p className="form-help">
-          Tanı, terapi notu, sağlık öyküsü veya gereksiz kişisel veri yazmayın.
-        </p>
-        <textarea
-          className="form-control resize-y"
-          id="operationalNote"
-          maxLength={500}
-          name="operationalNote"
-          rows={4}
+        <p className="form-help">Talebi onaylarken zorunludur.</p>
+        <input
+          className="form-control"
+          id="proposedAppointmentAt"
+          name="proposedAppointmentAt"
+          type="datetime-local"
         />
       </div>
       {state.message && (

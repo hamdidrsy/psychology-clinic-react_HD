@@ -32,6 +32,9 @@ export function SiteFooter() {
               <li>
                 <Link href="/sik-sorulan-sorular">Sık sorulanlar</Link>
               </li>
+              <li>
+                <Link href="/randevu-takip">Anonim talep takibi</Link>
+              </li>
             </ul>
           </div>
           <div>

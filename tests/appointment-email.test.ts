@@ -3,32 +3,15 @@ import { describe, expect, it } from "vitest";
 import { appointmentNotificationTemplate } from "@/emails/appointment-notification";
 import { withTimeout } from "@/server/appointments/notification";
 
-describe("appointmentNotificationTemplate", () => {
-  it("includes operational data and both HTML/text alternatives", () => {
+describe("anonymous appointment email", () => {
+  it("contains only operational anonymous content", () => {
     const template = appointmentNotificationTemplate({
-      referenceCode: "HD-20260808-ABC12345",
-      fullName: "Ayşe <Örnek>",
-      preferredContactMethod: "EMAIL",
-      email: "ayse@example.com",
-      serviceName: "Bireysel Görüşmeler",
-      createdAt: new Date("2026-08-08T10:00:00.000Z"),
+      createdAt: new Date("2026-08-19T10:00:00.000Z"),
     });
-
-    expect(template.subject).toContain("HD-20260808-ABC12345");
-    expect(template.text).toContain("ayse@example.com");
-    expect(template.html).toContain("Ayşe &lt;Örnek&gt;");
-  });
-
-  it("does not include a free-note field", () => {
-    const template = appointmentNotificationTemplate({
-      referenceCode: "HD-20260808-ABC12345",
-      fullName: "Ayşe Örnek",
-      preferredContactMethod: "PHONE",
-      phone: "+905551112233",
-      createdAt: new Date("2026-08-08T10:00:00.000Z"),
-    });
-    expect(template.text).not.toContain("Kısa not:");
-    expect(template.html).not.toContain("Kısa not");
+    expect(template.subject).toBe("Yeni anonim randevu talebi");
+    expect(template.text).toContain("anonim");
+    expect(template.text).not.toMatch(/ad soyad|telefon|e-posta:/i);
+    expect(template.html).not.toMatch(/ciphertext|trackingSecret|requestId/);
   });
 });
 

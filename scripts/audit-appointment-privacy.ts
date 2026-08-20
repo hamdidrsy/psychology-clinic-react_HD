@@ -8,40 +8,38 @@ loadEnv({ quiet: true });
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error("DATABASE_URL zorunludur.");
-
 const db = new PrismaClient({
   adapter: new PrismaPg({ connectionString: databaseUrl }),
 });
 
 try {
-  const [total, withEmail, withPhone, withNote, bounds] = await Promise.all([
+  const [total, columns] = await Promise.all([
     db.appointmentRequest.count(),
-    db.appointmentRequest.count({ where: { email: { not: null } } }),
-    db.appointmentRequest.count({ where: { phone: { not: null } } }),
-    db.appointmentRequest.count({ where: { note: { not: null } } }),
-    db.appointmentRequest.aggregate({
-      _min: { createdAt: true },
-      _max: { createdAt: true },
-    }),
+    db.$queryRaw<{ column_name: string }[]>`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'AppointmentRequest'
+    `,
   ]);
-
+  const names = new Set(columns.map((column) => column.column_name));
+  const forbiddenPlaintextColumns = [
+    "fullName",
+    "email",
+    "phone",
+    "note",
+  ].filter((name) => names.has(name));
   console.log(
     JSON.stringify(
       {
         total,
-        plaintextFieldCounts: {
-          fullName: total,
-          email: withEmail,
-          phone: withPhone,
-          note: withNote,
-        },
-        firstCreatedAt: bounds._min.createdAt?.toISOString() ?? null,
-        lastCreatedAt: bounds._max.createdAt?.toISOString() ?? null,
+        encryptedModel: forbiddenPlaintextColumns.length === 0,
+        forbiddenPlaintextColumns,
       },
       null,
       2,
     ),
   );
+  if (forbiddenPlaintextColumns.length > 0) process.exitCode = 1;
 } finally {
   await db.$disconnect();
 }

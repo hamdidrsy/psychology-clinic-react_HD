@@ -8,7 +8,7 @@ export default async function AdminHomePage() {
   const db = getDb();
   const [newAppointments, draftArticles, publishedArticles] = await Promise.all(
     [
-      db.appointmentRequest.count({ where: { status: "NEW" } }),
+      db.appointmentRequest.count({ where: { status: "PENDING" } }),
       db.article.count({ where: { status: "DRAFT" } }),
       db.article.count({ where: { status: "PUBLISHED" } }),
     ],
@@ -18,7 +18,7 @@ export default async function AdminHomePage() {
     [
       "Yeni randevu talebi",
       newAppointments,
-      "/admin/randevu-talepleri?status=NEW",
+      "/admin/randevu-talepleri?status=PENDING",
     ],
     ["Taslak makale", draftArticles, "/admin/makaleler?status=DRAFT"],
     [

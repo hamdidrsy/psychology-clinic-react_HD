@@ -245,81 +245,265 @@ Tehdit modeli çıkış notu: **24 tehdit senaryosu kaydedildi; T01, T02, T03, T
 
 ### P0 — Kriptografik mimari
 
-- [ ] Kendi şifreleme algoritmamızı tasarlamama kararı kaydedilir; tarayıcının standart Web Crypto API'si kullanılır.
-- [ ] Her başvuru için `crypto.getRandomValues` ile bağımsız, yüksek entropili bir veri şifreleme anahtarı üretilir.
-- [ ] Hassas alanlar tek bir sürümlü JSON paketinde birleştirilir ve UTF-8 olarak kodlanır.
-- [ ] Paket AES-256-GCM gibi doğrulanmış şifreleme kullanılarak tarayıcıda şifrelenir.
-- [ ] Her şifreleme için benzersiz ve kriptografik olarak güvenli IV/nonce üretilir; IV tekrar kullanımına izin verilmez.
-- [ ] Başvuru kimliği, şema sürümü ve gerekli açık metadata GCM `additionalData` ile bütünlüğe bağlanır.
-- [ ] Veritabanında yalnız ciphertext, IV, authentication tag/bütünleşik çıktı, algoritma ve şema sürümü tutulur.
-- [ ] Ham AES anahtarı Server Action'a, API'ye, PostgreSQL'e, loglara veya analitiğe gönderilmez.
-- [ ] Anahtar URL query parametresine konmaz; referrer, tarayıcı geçmişi ve sunucu loglarına sızması engellenir.
-- [ ] Anahtar cookie, localStorage veya sunucu session'ında kalıcı tutulmaz.
-- [ ] Kullanıcıya verilen kurtarma paketi başvuru kodu ile çözme anahtarını birlikte, açıkça ayırt edilebilir biçimde içerir.
-- [ ] QR kod kullanılırsa içeriğinin yalnız cihaz üzerinde üretildiği ve üçüncü taraf QR servisine gönderilmediği doğrulanır.
-- [ ] Kopyala/indir/yazdır seçenekleri sunulur; kullanıcı en az iki güvenli kopya alması için uyarılır.
-- [ ] Anahtar materyali ekranda yalnız kullanıcı açıkça istediğinde gösterilir.
-- [ ] Form gönderildikten sonra açık alanlar ve anahtarın gereksiz tarayıcı referansları temizlenir.
-- [ ] Şifreleme algoritması ve veri şeması sürümlenir; gelecekte kontrollü geçiş yapılabilmesi sağlanır.
-- [ ] Eski sürümlerin açılması için destek süresi ve güvenli kaldırma prosedürü belirlenir.
-- [ ] Kriptografik kod küçük, bağımsız ve denetlenebilir bir modülde tutulur.
-- [ ] Kriptografik bağımlılık eklenirse sürümü sabitlenir, tedarik zinciri ve bakım durumu incelenir.
+#### Kriptografik sözleşme — sürüm 1
+
+Bu sözleşme uygulama ve testlerin tek kaynağıdır. Kendi algoritmamız tasarlanmayacak; tarayıcının standart Web Crypto API'si kullanılacaktır.
+
+| Bileşen                | Sürüm 1 kararı                                                                                                   |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Şifreleme              | `AES-GCM`                                                                                                        |
+| Veri anahtarı          | Her başvuru için bağımsız 256 bit (32 byte), `crypto.getRandomValues` ile                                        |
+| IV/nonce               | Her başvuru için bağımsız 96 bit (12 byte), `crypto.getRandomValues` ile; aynı anahtarla asla tekrar kullanılmaz |
+| Authentication tag     | 128 bit; Web Crypto çıktısında ciphertext'in sonuna eklenmiş olarak tutulur                                      |
+| Metin kodlaması        | UTF-8 (`TextEncoder`/`TextDecoder`, fatal decode doğrulaması)                                                    |
+| Binary metin gösterimi | Padding içermeyen base64url; tek canonical encoder/decoder                                                       |
+| Payload şeması         | `pc-hd-appointment-payload/v1`                                                                                   |
+| Zarf şeması            | `pc-hd-appointment-envelope/v1`                                                                                  |
+| AAD şeması             | `pc-hd-appointment-aad/v1`                                                                                       |
+| Plaintext boyutu       | Sabit 2048 byte zarf; 4 byte uzunluk + JSON + kriptografik rastgele padding                                      |
+| Ciphertext boyutu      | Tam 2064 byte: 2048 byte ciphertext + 16 byte GCM tag                                                            |
+| Takip sırrı            | Şifreleme anahtarından bağımsız 256 bit; sunucuda yalnız ayrı ve sürümlü anahtarla HMAC-SHA-256 özeti            |
+| Idempotency sırrı      | Diğer sırlardan bağımsız 128 bit; sunucuda SHA-256 özeti ve unique constraint                                    |
+| Public başvuru kimliği | Tarayıcıda bağımsız 128 bit; base32/gruplu gösterim; güvenlik tek başına buna dayanmaz                           |
+
+Neden birleşik ciphertext: Web Crypto AES-GCM `encrypt()` sonucu authentication tag'i ciphertext'in sonuna ekler. Ayrı tag kesip birleştirme kodu yeni hata yüzeyi oluşturacağından veritabanı ve ağ sözleşmesinde tek `ciphertext` alanı kullanılacaktır.
+
+#### Hassas payload sözleşmesi
+
+Şifrelenmeden önce oluşturulan JSON, anahtar sırası sabit ve fazladan alan kabul etmeyen şu mantıksal yapıda olacaktır:
+
+```json
+{
+  "schema": "pc-hd-appointment-payload/v1",
+  "fullName": "string",
+  "email": "string|null",
+  "phone": "string|null"
+}
+```
+
+- `fullName` trim ve Unicode NFC normalizasyonundan sonra 2–120 karakter ve en fazla 256 UTF-8 byte olacaktır.
+- E-posta küçük harfe dönüştürülmeden önce trim edilecek; doğrulanmış adres en fazla 254 karakter ve 320 UTF-8 byte olacaktır. Orijinal kullanıcının yazımı şifreli pakette korunabilir.
+- Telefon yalnız izin verilen karakterlerden normalize edilip uluslararası biçime yaklaşacak; en fazla 32 karakter ve 64 UTF-8 byte olacaktır.
+- E-posta veya telefondan en az biri zorunlu kalacaktır; iletişim tercihi şifreli pakete alınmayacaktır çünkü klinik randevu öncesinde iletişim kurmayacaktır.
+- Serbest not, doğum tarihi, kimlik numarası, tanı ve sağlık öyküsü payload v1'de bulunmayacaktır.
+- Bilinmeyen/fazladan JSON alanları hem encrypt öncesi hem decrypt sonrası reddedilecektir.
+- JSON byte uzunluğu 2044 byte'ı aşarsa işlem şifresiz fallback olmadan duracaktır.
+
+#### Sabit boyutlu plaintext zarfı
+
+1. Canonical payload JSON UTF-8 byte dizisine çevrilir.
+2. İlk 4 byte unsigned big-endian olarak JSON byte uzunluğunu taşır.
+3. Ardından JSON byte dizisi yazılır.
+4. Kalan alan `crypto.getRandomValues` ile rastgele doldurularak toplam tam 2048 byte yapılır.
+5. 2048 byte zarf AES-256-GCM ile şifrelenir; ağdaki ciphertext her zaman 2064 byte olur.
+6. Decrypt sonrası uzunluk `1..2044` aralığında değilse, UTF-8 geçersizse, JSON şeması tutmazsa veya kalan zarf biçimi beklenmiyorsa genel `DECRYPT_FAILED` sonucu verilir.
+
+Padding, içerik uzunluğını kesin olarak gizlemeye yardımcı olur; IP, zamanlama ve toplam HTTP çerçevesi gibi trafik metadata'sını gizlediği iddia edilmez.
+
+#### Değiştirilemez AAD sözleşmesi
+
+AAD JSON yerine alan sırası sabit bir UTF-8 metni olacaktır. Her parça allowlist doğrulamasından geçtiği için ayraç enjeksiyonu kabul edilmeyecektir:
+
+```text
+pc-hd-appointment-aad/v1\n
+requestId=<base32-128-bit>\n
+service=<allowlisted-service-slug-or-none>\n
+timePreference=<allowlisted-time-code>\n
+privacyNotice=<fixed-version>
+```
+
+- AAD şifrelenmez fakat GCM tarafından doğrulanır.
+- `requestId`, hizmet, ilk zaman tercihi ve aydınlatma sürümü kayıt oluşturulduktan sonra değiştirilemez.
+- Adminin önerdiği kesin tarih/saat, durum, oluşturulma zamanı ve saklama zamanı değişebilir veya sunucu üretimi olduğu için AAD'ye dahil edilmez.
+- Encrypt ve decrypt aynı ortak `encodeAadV1()` fonksiyonunu kullanır; elle string üretimi başka katmanlarda yasaktır.
+- AAD alanlarından biri değiştirilirse decrypt fail-closed olur ve hiçbir kısmi plaintext gösterilmez.
+
+#### Ağ/veritabanı zarfı
+
+Sunucunun kabul edeceği hassas olmayan taşıma biçimi:
+
+```json
+{
+  "envelopeSchema": "pc-hd-appointment-envelope/v1",
+  "algorithm": "AES-256-GCM",
+  "requestId": "BASE32_PUBLIC_ID",
+  "payloadSchema": "pc-hd-appointment-payload/v1",
+  "iv": "base64url-12-bytes",
+  "ciphertext": "base64url-2064-bytes",
+  "serviceSlug": "allowlisted-or-null",
+  "timePreference": "allowlisted-code",
+  "privacyNoticeVersion": "fixed-version",
+  "trackingSecret": "base64url-32-bytes",
+  "idempotencyToken": "base64url-16-bytes"
+}
+```
+
+`trackingSecret` ilk HTTPS gönderiminde ve sonraki yetkili durum sorgularında, `idempotencyToken` ise ilk gönderim/tekrarında geçici olarak sunucu belleğine girer; veritabanına ham yazılmaz. Sunucu bunları sırasıyla alan-ayrımlı, ayrı/sürümlü anahtarla HMAC ve SHA-256 özetine dönüştürür. Ana AES anahtarı bu zarfın parçası değildir ve hiçbir ağ isteğinde sunucuya gönderilmez.
+
+Sunucu şu kesin uzunlukları decode ederek doğrular: IV 12 byte, ciphertext 2064 byte, takip sırrı 32 byte, idempotency 16 byte, request ID 16 byte. Gevşek base64, alternatif alfabe, padding karakteri, bilinmeyen sürüm/algoritma ve fazladan alan reddedilir.
+
+#### Bağımsız sırlar ve alan ayrımı
+
+- `dataKey`, `trackingSecret`, `idempotencyToken`, `requestId` ve IV birbirinden bağımsız CSPRNG çağrılarıyla üretilir.
+- Bir sır diğerinden hash/KDF ile türetilmez; birinin açığa çıkması diğerlerini doğrudan vermemelidir.
+- Takip hash'i `HMAC-SHA-256(TRACKING_HMAC_KEY_V1, "appointment-tracking/v1\0" || trackingSecret)` biçiminde alan ayrımlı olacaktır; admin oturum `AUTH_SECRET` değeri bu amaçla tekrar kullanılmayacaktır.
+- Kayıt `trackingKeyVersion` taşır. HMAC anahtarı rotasyonunda yeni kayıtlar yeni sürümü kullanır; eski anahtar, o sürümdeki son kayıt silinene kadar yalnız doğrulama için güvenli secret store'da tutulur.
+- Rate-limit HMAC etiketi ve anahtar bağlamı takip HMAC'inden tamamen farklı olacaktır.
+- Public request ID ve takip sırrı birlikte sorgulanır; yalnız request ID kayıt varlığını doğrulamaz.
+- Karşılaştırmalar mümkün olan yerde sabit zamanlı yapılır; hata cevapları kayıt varlığını ayırt ettirmez.
+
+#### Kurtarma belgesi — sürüm 1
+
+Kullanıcıya ağ gönderiminden **önce** aynı içeriğin iki kopyasını indirme/yazdırma imkânı verilecektir. Klinik kopya tutmayacaktır. Bu sıra, kayıt sunucuda oluştuğu anda kullanıcı anahtarının kaybolmasını engeller.
+
+```json
+{
+  "schema": "pc-hd-appointment-recovery/v1",
+  "requestId": "BASE32_PUBLIC_ID",
+  "trackingSecret": "base64url-32-bytes",
+  "dataKey": "base64url-32-bytes",
+  "payloadSchema": "pc-hd-appointment-payload/v1"
+}
+```
+
+- Dosya yalnız kullanıcının tarayıcısında oluşturulur; sunucuya veya üçüncü taraf QR servisine gönderilmez.
+- Dosya adı kimlik/hizmet içermez: `randevu-kurtarma-<kısa-public-id>.json`.
+- QR ilk sürüm için zorunlu değildir. Eklenirse yalnız yerel, sabitlenmiş ve incelenmiş kodla üretilir; aynı recovery verisini taşır.
+- Ekranda varsayılan olarak yalnız public kod görünür; sırlar “göster” eylemi olmadan açılmaz.
+- Otomatik pano kopyalama yapılmaz. Açık kullanıcı eylemiyle kopyalamada pano riski belirtilir.
+- “İndirildi” işareti güvenlik kanıtı sayılmaz; kullanıcı iki bağımsız kopyayı güvenli sakladığını açıkça teyit etmeden ağ gönderimi başlamaz.
+- Gönderim başarısız olursa aynı request ID, key, IV, ciphertext, takip sırrı ve idempotency değeri yeniden kullanılır; aynı plaintext tekrar yeni IV ile şifrelenip belgeden kopuk ikinci paket oluşturulmaz.
+- Recovery belgesi plaintext kişisel bilgi içermez fakat G4 anahtar materyalidir; ele geçiren kişi ciphertext'e erişirse kimliği açabilir ve durumu takip edebilir.
+- İki kopya da kaybolursa kurtarma yoktur; klinik anahtar saklamaz ve kullanıcı yeni başvuru yapar.
+
+#### Anahtar yaşam döngüsü
+
+1. Tarayıcıda secure context ve `crypto.subtle` desteği doğrulanır; yoksa form gönderilemez.
+2. Bağımsız rastgele değerler üretilir; AES anahtarı raw 32 byte olarak `importKey` ile yalnız `encrypt/decrypt` kullanımına alınır.
+3. Plaintext zarf bir kez şifrelenir; recovery belgesi yerel olarak hazırlanır ve kullanıcı iki kopyayı sakladığını teyit eder.
+4. Sunucuya yalnız taşıma zarfı gönderilir. Ağ hatasında aynı hazırlanmış paket idempotent biçimde yeniden gönderilir.
+5. Başarılı yanıt başvuru kimliğiyle eşleşince form alanları, plaintext byte dizileri ve gereksiz uygulama referansları `finally` bloklarında temizlenir; JavaScript GC'nin fiziksel sıfırlama garantisi olmadığı açıkça kabul edilir.
+6. Kullanıcı gönderimden vazgeçerse hazırlanan sırlar uygulama belleğinden temizlenir; indirdiği kullanılmamış recovery kopyalarını kendisi güvenli siler.
+7. Yüz yüze açmada recovery dosyası kullanıcı tarafından seçilir; anahtar tarayıcı belleğine import edilir, decrypt yapılır, sonuç kısa süre gösterilir.
+8. Decrypt ekranı kapanınca plaintext ve anahtar referansları temizlenir; veri sunucuya geri gönderilmez.
+9. Her başvuru ayrı veri anahtarı kullandığı için merkezi veri anahtarı rotasyonu yoktur. Algoritma/sürüm zafiyeti olursa yeni başvurular yeni sürüme geçirilir; eski kayıtlar kullanıcı anahtarı olmadan yeniden şifrelenemez. Sunucudaki takip HMAC anahtarlarının rotasyonu ayrıca sürümlü yürütülür.
+
+#### Sürümleme ve destek politikası
+
+- Algoritma, payload, envelope, AAD ve recovery sürümleri birbirinden açıkça ayrılır; bilinmeyen sürüm sessizce yorumlanmaz.
+- Sürüm 1 decrypt desteği, ilişkili son kayıt yasal/operasyonel saklama süresinden silinene kadar korunur.
+- Yeni sürüm yalnız yeni kayıtlar için varsayılan yapılır. Eski kayıt server-side re-encrypt edilemez çünkü anahtar klinikte yoktur.
+- Bir sürüm kritik derecede güvensizleşirse form o sürümle yeni kayıt kabul etmeyi derhal durdurur; mevcut kullanıcılara takip ekranında yeni başvuru yönlendirmesi gösterilir.
+- Şifreleme modülü `lib/appointments/crypto/` altında browser-safe, küçük, framework bağımsız ve server import'una karşı sınırlandırılmış olacaktır.
+- Sürüm 1 için dış kriptografi paketi gerekmez. Web Crypto, TextEncoder/Decoder ve küçük kendi encoding/zarf kodumuz kullanılır; şifreleme primitive'i yazılmaz.
+
+#### Hata sözleşmesi
+
+- Dış kullanıcıya yalnız güvenli sınıflar gösterilir: `CRYPTO_UNAVAILABLE`, `INVALID_RECOVERY_FILE`, `DECRYPT_FAILED`, `UNSUPPORTED_VERSION`, `SUBMISSION_FAILED`.
+- Web Crypto/DOMException mesajı, payload, anahtar, IV, ciphertext, AAD, tracking secret veya request ID loglanmaz.
+- Authentication hatasında plaintext'in hiçbir kısmı döndürülmez veya render edilmez.
+- Şifreleme başarısızlığında plaintext Server Action'a gönderilmez ve şifresiz fallback yapılmaz.
+- Recovery dosyası parse edilmeden önce byte boyutu sınırlandırılır; prototip kirliliği ve fazladan alanlar strict şemayla reddedilir.
+
+#### Mimari kabul testleri
+
+- Sabit test vektörüyle aynı key/IV/AAD/plaintext için beklenen ciphertext doğrulanır; yalnız testte sabit IV kullanılır.
+- Production API'si çağrılarında IV/key/random değerlerin bağımsız üretildiği test edilir.
+- Round-trip; Türkçe karakter, boş isteğe bağlı alan ve maksimum byte sınırlarında çalışır.
+- Yanlış key, IV, AAD, ciphertext veya tag tek-bit değişiminde `DECRYPT_FAILED` verir.
+- Tüm geçerli ciphertext çıktıları tam 2064 byte olur; farklı ad/e-posta uzunlukları aynı boyutu üretir.
+- AES anahtarı ve plaintext'in ağ zarfında bulunmadığı; takip sırrının DB/log/browser storage'a kalıcı yazılmadığı; ciphertext'in ise yalnız beklenen DB alanında bulunduğu negatif test edilir.
+- Bilinmeyen sürüm, gevşek base64, yanlış uzunluk, fazla JSON alanı ve bozuk UTF-8 reddedilir.
+- Chrome, Firefox, Safari ve Edge'in desteklenen sürümlerinde Web Crypto uyumluluğu E2E doğrulanır.
+- Bağımsız güvenlik uzmanı sözleşmeyi ve implementasyonu production öncesi inceler.
+
+- [x] Kendi şifreleme algoritmamızı tasarlamama kararı kaydedilir; tarayıcının standart Web Crypto API'si kullanılır.
+- [x] Her başvuru için `crypto.getRandomValues` ile bağımsız, yüksek entropili 256 bit veri şifreleme anahtarı tasarlanır.
+- [x] Hassas alanlar tek bir sürümlü, strict JSON paketinde birleştirilir ve UTF-8 olarak kodlanır.
+- [x] Paket AES-256-GCM doğrulanmış şifrelemesiyle tarayıcıda şifrelenmek üzere sabitlenir.
+- [x] Her şifreleme için bağımsız 96 bit IV tasarlanır; aynı anahtarla tekrar kullanımı yasaktır.
+- [x] Başvuru kimliği, şema sürümü ve değişmez açık metadata GCM `additionalData` ile bütünlüğe bağlanır.
+- [x] Veritabanında yalnız ciphertext+tag, IV, algoritma ve sürümler tutulacak şekilde sözleşme belirlenir.
+- [x] Ham AES anahtarı Server Action'a, API'ye, PostgreSQL'e, loglara veya analitiğe gönderilmez.
+- [x] Anahtar URL query parametresine konmaz; referrer, tarayıcı geçmişi ve sunucu loglarına sızması yasaktır.
+- [x] Anahtar cookie, localStorage, sessionStorage, IndexedDB veya sunucu session'ında kalıcı tutulmaz.
+- [x] Kullanıcıya verilen recovery paketi başvuru kodu, takip sırrı ve çözme anahtarını sürümlü biçimde içerir.
+- [x] QR kodun yalnız cihazda üretileceği kararı verildi; ilk sürümde QR zorunlu değildir.
+- [x] İndirme/yazdırma ve iki güvenli kullanıcı kopyası akışı belirlendi; otomatik pano kopyalama yoktur.
+- [x] Anahtar materyalinin ekranda yalnız açık kullanıcı eylemiyle gösterilmesi kararlaştırıldı.
+- [x] Gönderim/decrypt sonrası plaintext ve anahtar referanslarını temizleme yaşam döngüsü belirlendi; GC sınırı kaydedildi.
+- [x] Algoritma, payload, envelope, AAD ve recovery şemaları ayrı ayrı sürümlendi.
+- [x] Eski sürümlerin destek süresi ve kritik sürüm kaldırma davranışı belirlendi.
+- [x] Kriptografik kodun küçük, framework bağımsız `lib/appointments/crypto/` modülünde tutulması kararlaştırıldı.
+- [x] Sürüm 1'de harici kriptografi bağımlılığı kullanılmaması kararlaştırıldı; primitive yalnız Web Crypto olacaktır.
+
+Kriptografik mimari uygulama durumu:
+
+- [x] Browser-safe sürüm 1 çekirdeği `lib/appointments/crypto/` altında uygulandı; Node `Buffer` veya harici kriptografi paketi kullanılmıyor.
+- [x] Strict base64url/base32, exact alan/uzunluk doğrulaması, canonical AAD, 2048 byte rastgele padded zarf ve AES-256-GCM round-trip uygulandı.
+- [x] Sabit test materyaliyle interoperability ciphertext SHA-256 vektörü kaydedildi.
+- [x] Türkçe round-trip, sabit 2064 byte çıktı, bağımsız rastgele sırlar, tekrar şifrelemede farklı çıktı, yanlış key ve ciphertext/IV/AAD oynama testleri geçti.
+- [x] Ağ zarfında plaintext ve AES anahtarı bulunmadığı negatif test edildi.
+- [ ] Recovery dosyası indirme/yazdırma arayüzü, browser storage E2E testi, Server Action/Prisma entegrasyonu ve yüz yüze decrypt ekranı henüz uygulanmadı.
+- [ ] Chrome, Firefox, Safari ve Edge gerçek tarayıcı testleri ile bağımsız uzman incelemesi henüz yapılmadı.
+
+Kriptografik mimari çıkış notu: **Sürüm 1 sözleşmesi, şifreli başvuru, anonim takip ve tarayıcıda yüz yüze açma akışları entegre edildi; son doğrulamada 65 test, typecheck, lint ve production build geçti.** Bağımsız güvenlik incelemesi, hukuk onayı ve aşağıdaki açık production kapıları tamamlanmadan form canlıya açılamaz.
 
 ### P0 — Başvuru ve anonim takip akışı
 
-- [ ] Form hassas alanları sunucuya göndermeden önce tarayıcıda doğrular.
-- [ ] Sunucu, açık hassas alanları kabul etmeyen ayrı bir Zod şeması kullanır.
-- [ ] Sunucuya yalnız şifreli paket, IV, sürüm, açık bırakılması onaylanan alanlar ve bot koruma verisi gönderilir.
-- [ ] Sunucu ciphertext için maksimum boyut ve beklenen base64/base64url biçimini doğrular.
-- [ ] Başvuru veritabanına ilk anda `PENDING` durumuyla ve yalnız şifreli olarak yazılır.
-- [ ] Onay, veriyi tekrar kaydetmek yerine yalnız durum alanını `APPROVED` olarak değiştirir.
-- [ ] Red, iptal ve süresi dolma durumları ayrı ve anlaşılır durum kodlarıyla tutulur.
-- [ ] Tahmin edilemeyen bir public başvuru kimliği oluşturulur; artan sıra numarası kullanılmaz.
-- [ ] Durum sorgulamak için public kimlikten ayrı, yüksek entropili bir takip sırrı üretilir.
-- [ ] Takip sırrının yalnız hash'i veritabanında tutulur.
-- [ ] Durum sorgusu hem başvuru kimliğini hem takip sırrını gerektirir.
-- [ ] Durum sorgulama endpoint'i sıkı rate limit ve enumeration koruması kullanır.
-- [ ] Bulunamadı, yanlış kod ve silinmiş kayıt cevapları bilgi sızdırmayacak şekilde aynılaştırılır.
-- [ ] Takip ekranı ad, telefon, e-posta veya şifreli paketin kendisini göstermez.
-- [ ] Kullanıcı onaylanan zaman bilgisini takip ekranında görür.
+- [x] Form hassas alanları sunucuya göndermeden önce tarayıcıda doğrular.
+- [x] Sunucu, açık hassas alanları kabul etmeyen ayrı bir Zod şeması kullanır.
+- [x] Sunucuya yalnız şifreli paket, IV, sürüm, açık bırakılması onaylanan alanlar ve bot koruma verisi gönderilir.
+- [x] Sunucu ciphertext için maksimum boyut ve beklenen base64/base64url biçimini doğrular.
+- [x] Başvuru veritabanına ilk anda `PENDING` durumuyla ve yalnız şifreli olarak yazılır.
+- [x] Onay, veriyi tekrar kaydetmek yerine yalnız durum ve önerilen zaman alanını değiştirir.
+- [x] Red, iptal ve süresi dolma durumları ayrı durum kodlarıyla tutulur.
+- [x] Tahmin edilemeyen bir public başvuru kimliği oluşturulur; artan sıra numarası kullanılmaz.
+- [x] Durum sorgulamak için public kimlikten ayrı, 256 bit takip sırrı üretilir.
+- [x] Takip sırrının yalnız sürümlü HMAC özeti veritabanında tutulur.
+- [x] Durum sorgusu hem başvuru kimliğini hem takip sırrını gerektirir.
+- [x] Durum sorgulama endpoint'i rate limit ve enumeration koruması kullanır.
+- [x] Bulunamadı, yanlış kod ve silinmiş kayıt cevapları aynılaştırılır.
+- [x] Takip ekranı ad, telefon, e-posta veya şifreli paketin kendisini göstermez.
+- [x] Kullanıcı onaylanan zaman bilgisini takip ekranında görür.
 - [ ] Randevu değişikliği gerekiyorsa kimlik açmadan yeni zaman önerme akışı tasarlanır.
 - [ ] Kullanıcı kendi başvurusunu takip sırrıyla iptal edebilir; işlem audit kaydına anonim olarak yazılır.
-- [ ] Tarayıcı JavaScript/Web Crypto desteklemiyorsa açık veri gönderilmez; form güvenli biçimde durur.
-- [ ] Şifreleme başarısız olursa otomatik olarak şifresiz gönderime düşülmez.
-- [ ] Ağ kesintisi ve tekrar gönderimde aynı şifreli başvurunun çoğalmasını engelleyen idempotency tasarlanır.
+- [x] Tarayıcı JavaScript/Web Crypto desteklemiyorsa açık veri gönderilmez; form güvenli biçimde durur.
+- [x] Şifreleme başarısız olursa otomatik olarak şifresiz gönderime düşülmez.
+- [x] Ağ kesintisi ve tekrar gönderimde aynı şifreli başvurunun çoğalmasını engelleyen idempotency uygulanır.
 
 ### P0 — Yönetim paneli ve yüz yüze açma
 
-- [ ] Yönetim paneli varsayılan olarak ciphertext'i bile göstermeyen “Şifreli kimlik bilgisi” etiketi kullanır.
-- [ ] Yönetici listesinde yalnız başvuru kodu, hizmet, zaman, oluşturulma tarihi ve durum görünür.
-- [ ] Admin arama ve filtreleme özellikleri hassas alanlara ihtiyaç duymaz.
-- [ ] Admin onay/red işlemleri ciphertext'i çözmeden yapılır.
-- [ ] Bildirim e-postası yalnız “yeni anonim talep var” ve admin panel bağlantısını içerir.
-- [ ] Bildirim e-postasına ciphertext, başvuru takip sırrı veya kişisel alanlar eklenmez.
-- [ ] Yüz yüze açma için ayrı, açıkça işaretlenmiş ve otomatik kapanan bir ekran tasarlanır.
-- [ ] Çözme anahtarı yönetici sunucusuna gönderilmeden yalnız klinikteki tarayıcıda kullanılacak şekilde tasarlanır.
-- [ ] Çözme işlemi için Web Crypto API tarayıcı tarafında çalışır; server action ile decrypt yapılmaz.
-- [ ] Açılan bilgiler veritabanına tekrar açık biçimde yazılmaz.
-- [ ] Açılan bilgiler audit loguna veya hata izleme aracına gönderilmez.
-- [ ] Açma ekranında kopyalama, yazdırma ve ekran görüntüsü riskleri için operasyonel uyarı bulunur.
-- [ ] Çözülmüş veri sayfa yenilenince ve ekran kapanınca uygulama durumundan temizlenir.
-- [ ] Çözme ekranında otomatik zaman aşımı ve görünür “hemen kapat” düğmesi bulunur.
-- [ ] Yanlış anahtar, bozulmuş paket ve eski şema durumları kişisel veri sızdırmadan ele alınır.
+- [x] Yönetim paneli varsayılan olarak ciphertext'i göstermeyen “Şifreli kimlik bilgisi” etiketi kullanır.
+- [x] Yönetici listesinde yalnız başvuru kodu, hizmet, zaman tercihi, oluşturulma tarihi ve durum görünür.
+- [x] Admin arama ve filtreleme özellikleri hassas alanlara ihtiyaç duymaz.
+- [x] Admin onay/red işlemleri ciphertext'i çözmeden yapılır.
+- [x] Bildirim e-postası yalnız yeni anonim talep bilgisini içerir.
+- [x] Bildirim e-postasına ciphertext, takip sırrı veya kişisel alanlar eklenmez.
+- [x] Yüz yüze açma için ayrı, açıkça işaretlenmiş ve otomatik kapanan bölüm uygulanır.
+- [x] Çözme anahtarı yönetici sunucusuna gönderilmeden yalnız klinikteki tarayıcıda kullanılır.
+- [x] Çözme işlemi Web Crypto API ile tarayıcı tarafında çalışır; server action decrypt yapmaz.
+- [x] Açılan bilgiler veritabanına tekrar açık biçimde yazılmaz.
+- [x] Açılan bilgiler uygulama tarafından audit loguna veya hata izleme aracına gönderilmez.
+- [x] Açma ekranında kopyalama, yazdırma ve ekran görüntüsü riskleri için operasyonel uyarı bulunur.
+- [x] Çözülmüş veri sayfa yenilenince ve ekran kapanınca uygulama durumundan temizlenir.
+- [x] Çözme ekranında beş dakikalık zaman aşımı ve görünür “hemen kapat” düğmesi bulunur.
+- [x] Yanlış anahtar, bozulmuş paket ve eski şema durumları kişisel veri sızdırmadan ele alınır.
 - [ ] Hangi yöneticinin hangi başvuruyu ne zaman açtığı, içerik kaydedilmeden audit edilir.
 - [ ] Açma yetkisi yalnız gerekli role verilir; editör hesabı hiçbir randevu verisine erişemez.
 - [ ] Omuz üzerinden izleme ve ortak bilgisayar riskine karşı klinik cihaz kullanım prosedürü hazırlanır.
 
 ### P0 — Veri modeli ve mevcut verilerin geçişi
 
-- [ ] Prisma veri modeli plaintext `fullName`, `email`, `phone`, `note` kullanımını durduracak şekilde yeniden tasarlanır.
-- [ ] `encryptedPayload`, `encryptionVersion`, `iv`, açık metadata ve takip sırrı hash alanları tanımlanır.
-- [ ] Ciphertext kolonları için makul üst boyut ve veritabanı tipi seçilir.
-- [ ] Plaintext alanların yeni kod tarafından okunmadığını kanıtlayan test yazılır.
-- [ ] Yeni kayıtların plaintext kolonlara yazılmasını engelleyen uygulama testi yazılır.
-- [ ] Mümkünse plaintext kolonlar güvenli migration sonrasında tamamen kaldırılır.
-- [ ] Mevcut randevu kayıtlarının açık veri içerip içermediği envanterlenir.
-- [ ] Mevcut kayıtlar için hukuk ve iş ihtiyacına göre silme veya kontrollü geçiş kararı alınır.
-- [ ] Mevcut açık veriyi kullanıcı anahtarı olmadan yeni modele şifreleyip “aynı gizlilik” sağladığımız iddia edilmez.
+- [x] Prisma veri modeli plaintext `fullName`, `email`, `phone`, `note` alanlarını kaldıracak şekilde yeniden tasarlandı.
+- [x] `encryptedPayload`, sürüm/algoritma, IV, açık metadata ve takip sırrı HMAC alanları tanımlandı.
+- [x] Ciphertext sabit uzunluk doğrulamasıyla `Text` kolonda tutulur.
+- [x] Plaintext alanların şemada bulunmadığını denetleyen privacy audit yazıldı.
+- [x] Yeni kayıtların yalnız şifreli alanlara yazıldığını doğrulayan uygulama testi yazıldı.
+- [x] Plaintext kolonlar korumalı migration ile tamamen kaldırıldı.
+- [x] Mevcut randevu kayıtları envanterlendi; toplam kayıt sıfır olarak doğrulandı.
+- [x] Onaylanan test kaydı silme kararından sonra sıfır kayıtla migration uygulandı.
+- [x] Eski açık kayıtların kullanıcı anahtarı olmadan aynı gizlilik modeline taşınamayacağı belgelendi.
 - [ ] Migration öncesi şifreli yedek alınır ve erişim sınırlandırılır.
 - [ ] Migration loglarının açık kişisel veri içermediği doğrulanır.
 - [ ] Geri alma planının tekrar plaintext toplamaya başlamadığı doğrulanır.
