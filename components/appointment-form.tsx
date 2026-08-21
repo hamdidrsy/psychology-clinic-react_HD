@@ -133,12 +133,26 @@ export function AppointmentForm() {
             disabled={!copiesConfirmed || pending}
             onClick={() => {
               if (!copiesConfirmed) return;
+              if (!navigator.onLine) {
+                setClientError(
+                  "İnternet bağlantısı yok. Kurtarma belgenizi koruyun; bağlantı geldikten sonra aynı şifreli paketle tekrar deneyin.",
+                );
+                return;
+              }
               const submission = new FormData();
               submission.set("envelope", JSON.stringify(prepared.envelope));
               submission.set("privacyAcknowledged", "true");
               submission.set("formStartedAt", String(formStartedAt));
               submission.set("website", "");
-              startTransition(() => action(submission));
+              startTransition(async () => {
+                try {
+                  await action(submission);
+                } catch {
+                  setClientError(
+                    "Bağlantı kurulamadı. Kurtarma belgenizi koruyun ve aynı şifreli paketle tekrar deneyin.",
+                  );
+                }
+              });
             }}
             type="button"
           >

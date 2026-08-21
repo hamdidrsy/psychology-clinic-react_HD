@@ -93,6 +93,20 @@ describe("appointment encryption v1", () => {
     expect(wire).not.toContain(first.recovery.dataKey);
   });
 
+  it("round-trips executable-looking text without exposing it on the wire", async () => {
+    const suspiciousPayload = {
+      ...payload,
+      fullName: '<img src=x onerror="window.__xss=1"> Güvenlik Testi 🧠',
+    };
+    const encrypted = await encryptAppointmentV1(suspiciousPayload, aad);
+    expect(JSON.stringify(encrypted.envelope)).not.toContain(
+      suspiciousPayload.fullName,
+    );
+    await expect(
+      decryptAppointmentV1(encrypted.envelope, encrypted.recovery),
+    ).resolves.toEqual(suspiciousPayload);
+  });
+
   it.each(["ciphertext", "iv", "serviceSlug", "timePreference"] as const)(
     "fails closed when %s is modified",
     async (field) => {

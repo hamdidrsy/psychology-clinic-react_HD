@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { appointmentNotificationTemplate } from "@/emails/appointment-notification";
-import { withTimeout } from "@/server/appointments/notification";
+import {
+  appointmentEmailFailureCode,
+  withTimeout,
+} from "@/server/appointments/notification";
 
 describe("anonymous appointment email", () => {
   it("contains only operational anonymous content", () => {
@@ -24,5 +27,25 @@ describe("email timeout", () => {
     await expect(withTimeout(new Promise(() => undefined), 5)).rejects.toThrow(
       "EMAIL_TIMEOUT",
     );
+  });
+});
+
+describe("email failure logging", () => {
+  it("maps raw messages to allowlisted failure codes", () => {
+    expect(appointmentEmailFailureCode(new Error("EMAIL_TIMEOUT"))).toBe(
+      "EMAIL_TIMEOUT",
+    );
+    expect(
+      appointmentEmailFailureCode(
+        new Error(
+          "Zorunlu ortam değişkenleri eksik: RESEND_API_KEY=secret-value",
+        ),
+      ),
+    ).toBe("CONFIGURATION_ERROR");
+    expect(
+      appointmentEmailFailureCode(
+        new Error("provider echoed a@example.test and secret-token"),
+      ),
+    ).toBe("PROVIDER_ERROR");
   });
 });

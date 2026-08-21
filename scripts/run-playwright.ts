@@ -5,6 +5,21 @@ import { resolve } from "node:path";
 const root = process.cwd();
 const nextCli = resolve(root, "node_modules/next/dist/bin/next");
 const playwrightCli = resolve(root, "node_modules/@playwright/test/cli.js");
+const maxCapturedServerLogLength = 1_000_000;
+
+const forbiddenServerLogPatterns = [
+  { label: "test e-mail address", pattern: /[A-Z0-9._%+-]+@example\.test/i },
+  { label: "test phone number", pattern: /\+9055\d{8,}/ },
+  {
+    label: "sensitive payload or key field",
+    pattern: /["']?(?:dataKey|trackingSecret|encryptedPayload|ciphertext)["']?\s*[:=]/i,
+  },
+  { label: "XSS test marker", pattern: /window\.__(?:e2eXss|decryptXss)/i },
+  {
+    label: "test identity",
+    pattern: /E2E (?:Gizlilik|Yüz Yüze|Ağ Kesintisi)/i,
+  },
+] as const;
 
 function run(
   executable: string,
@@ -43,14 +58,36 @@ async function stopServer(serverProcess: ChildProcess) {
   ]);
 }
 
-const server = run(process.execPath, [
-  nextCli,
-  "start",
-  "--hostname",
-  "127.0.0.1",
-  "--port",
-  "3100",
-]);
+let capturedServerLogs = "";
+const server = spawn(
+  process.execPath,
+  [nextCli, "start", "--hostname", "127.0.0.1", "--port", "3100"],
+  {
+    cwd: root,
+    env: process.env,
+    stdio: ["ignore", "pipe", "pipe"],
+    windowsHide: true,
+  },
+);
+
+function captureServerOutput(
+  stream: NodeJS.ReadableStream | null,
+  destination: NodeJS.WriteStream,
+) {
+  stream?.on("data", (chunk: Buffer | string) => {
+    const output = chunk.toString();
+    destination.write(output);
+
+    const remainingLength =
+      maxCapturedServerLogLength - capturedServerLogs.length;
+    if (remainingLength > 0) {
+      capturedServerLogs += output.slice(0, remainingLength);
+    }
+  });
+}
+
+captureServerOutput(server.stdout, process.stdout);
+captureServerOutput(server.stderr, process.stderr);
 
 let exitCode = 1;
 try {
@@ -64,6 +101,19 @@ try {
   exitCode = code ?? 1;
 } finally {
   await stopServer(server);
+}
+
+const privacyFindings = forbiddenServerLogPatterns
+  .filter(({ pattern }) => pattern.test(capturedServerLogs))
+  .map(({ label }) => label);
+
+if (privacyFindings.length > 0) {
+  console.error(
+    `Server log privacy scan failed (${privacyFindings.join(", ")}). Matched values were intentionally omitted.`,
+  );
+  exitCode = 1;
+} else if (exitCode === 0) {
+  console.log("Server log privacy scan passed.");
 }
 
 process.exitCode = exitCode;

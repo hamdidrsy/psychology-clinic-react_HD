@@ -126,4 +126,28 @@ describe("anonymous appointment action", () => {
     });
     expect(mocks.create).not.toHaveBeenCalled();
   });
+
+  it("logs only an allowlisted error code when persistence fails", async () => {
+    const { form, encrypted } = await encryptedForm();
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    mocks.create.mockRejectedValueOnce(
+      new Error(
+        `provider echoed ${encrypted.envelope.ciphertext} ${encrypted.recovery.dataKey}`,
+      ),
+    );
+
+    const result = await submitAppointmentRequest({ status: "idle" }, form);
+
+    expect(result.status).toBe("error");
+    expect(consoleError).toHaveBeenCalledWith(
+      "Anonymous appointment request failed",
+      { failureCode: "Error" },
+    );
+    const serializedLog = JSON.stringify(consoleError.mock.calls);
+    expect(serializedLog).not.toContain(encrypted.envelope.ciphertext);
+    expect(serializedLog).not.toContain(encrypted.recovery.dataKey);
+    consoleError.mockRestore();
+  });
 });

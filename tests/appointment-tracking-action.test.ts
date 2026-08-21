@@ -104,6 +104,33 @@ describe("anonymous appointment tracking actions", () => {
     });
   });
 
+  it("does not reveal whether a request id exists", async () => {
+    const wrongSecret = bytesToBase64Url(new Uint8Array(32).fill(8));
+    const invalidSecretResult = await trackAppointment(
+      { status: "idle" },
+      trackingForm(wrongSecret),
+    );
+    mocks.findUnique.mockResolvedValueOnce(null);
+    const missingRequestResult = await trackAppointment(
+      { status: "idle" },
+      trackingForm(),
+    );
+
+    expect(missingRequestResult).toEqual(invalidSecretResult);
+  });
+
+  it("rate limits before reading an appointment", async () => {
+    mocks.consumeRateLimit.mockResolvedValueOnce({ allowed: false });
+
+    const result = await trackAppointment({ status: "idle" }, trackingForm());
+
+    expect(result).toEqual({
+      status: "error",
+      message: "Çok fazla deneme yapıldı.",
+    });
+    expect(mocks.findUnique).not.toHaveBeenCalled();
+  });
+
   it("cancels atomically and writes identity-free history and audit records", async () => {
     const result = await cancelAppointment({ status: "idle" }, trackingForm());
 

@@ -31,6 +31,19 @@ export async function withTimeout<T>(
   }
 }
 
+export function appointmentEmailFailureCode(error: unknown) {
+  if (error instanceof Error && error.message === "EMAIL_TIMEOUT") {
+    return "EMAIL_TIMEOUT";
+  }
+  if (
+    error instanceof Error &&
+    error.message.startsWith("Zorunlu ortam değişkenleri eksik:")
+  ) {
+    return "CONFIGURATION_ERROR";
+  }
+  return "PROVIDER_ERROR";
+}
+
 export async function sendAppointmentNotification({
   notificationId,
   requestId,
@@ -85,10 +98,7 @@ export async function sendAppointmentNotification({
 
     return { sent: true as const };
   } catch (error) {
-    const failureCode =
-      error instanceof Error
-        ? error.message.slice(0, 100)
-        : "UNKNOWN_EMAIL_ERROR";
+    const failureCode = appointmentEmailFailureCode(error);
     console.error("Appointment notification failed", {
       requestId,
       failureCode,

@@ -1,17 +1,17 @@
 # Psychology Clinic — Kalan Görevler
 
-Son güncelleme: 20 Ağustos 2026
+Son güncelleme: 21 Ağustos 2026
 
 Bu dosya, projeyi güvenli şekilde canlıya almak ve canlı sonrasında işletmek için kalan işleri içerir. Gizlilik mimarisi tamamlanmadan randevu sistemi production ortamına açılmamalıdır.
 
 ## Güncel durum ve buradan devam sırası
 
-Bulunduğumuz aşama: **Şifreli randevu mimarisi ve temel anonim akış tamamlandı; şimdi production öncesi doğrulama ve güvenlik sağlamlaştırması aşamasındayız.** Form tarayıcıda şifreleme yapıyor, PostgreSQL plaintext kimlik alanı tutmuyor, kullanıcı gizli belgeyle durum görebiliyor/iptal edebiliyor, admin kimliği açmadan karar ve zaman önerisi girebiliyor, yüz yüze çözme yalnız tarayıcıda gerçekleşiyor. Son kontrolde 69 birim/entegrasyon testi ve 2 Chromium E2E testi geçti; lint, TypeScript, production build ve npm audit temiz.
+Bulunduğumuz aşama: **Şifreli randevu mimarisi ve temel anonim akış tamamlandı; şimdi production öncesi doğrulama ve güvenlik sağlamlaştırması aşamasındayız.** Form tarayıcıda şifreleme yapıyor, PostgreSQL plaintext kimlik alanı tutmuyor, kullanıcı gizli belgeyle durum görebiliyor/iptal edebiliyor, admin kimliği açmadan karar ve zaman önerisi girebiliyor, yüz yüze çözme yalnız tarayıcıda gerçekleşiyor. Son kontrolde 76 birim/entegrasyon testi ve 6 Chromium E2E testi geçti; lint, TypeScript, production build ve npm audit temiz.
 
 Kalan işleri aşağıdaki sırayla ele alacağız:
 
-1. **P0 — Yerel uçtan uca randevu provası:** `TRACKING_HMAC_KEY_V1` tanımlandı; gerçek PostgreSQL üzerinde şifreli oluşturma ve veri sızıntısı E2E testi geçti. Takip, admin onayı, önerilen zaman, iptal ve yüz yüze çözme tarayıcı senaryoları eklenecek.
-2. **P0 — Gizlilik E2E testleri:** Playwright kurulacak; HTTP isteğinde, tarayıcı depolarında, loglarda ve PostgreSQL'de plaintext/anahtar bulunmadığı otomatik olarak kanıtlanacak. Yanlış anahtar, bozuk paket, replay, XSS ve ağ kesintisi senaryoları test edilecek.
+1. **P0 — Yerel uçtan uca randevu provası:** `TRACKING_HMAC_KEY_V1` tanımlandı; gerçek PostgreSQL üzerinde şifreli oluşturma, takip, admin onayı, önerilen zaman, iptal ve yüz yüze çözme Chromium E2E senaryoları geçti.
+2. **P0 — Gizlilik E2E testleri:** Playwright kuruldu; HTTP isteği, tarayıcı depoları, PostgreSQL ve gerçek Next.js stdout/stderr çıktısı plaintext/anahtar sızıntısına karşı otomatik taranıyor. Yanlış anahtar, bozuk paket, replay, XSS ve çevrimdışı retry senaryoları test edildi; POST başladıktan sonraki bağlantı kopması için güvenli retry tasarımı açık.
 3. **P0 — Yönetici güvenliği:** Randevu açma yetkisi rol bazında sınırlandırılacak, açma olayı içeriksiz audit edilecek, MFA ve oturum iptali production şartı hâline getirilecek.
 4. **P0 — Veri yaşam döngüsü:** Reddedilen/iptal edilen/süresi dolan kayıtların otomatik temizliği, anonim silme talebi, yedek saklama süresi ve geri yükleme/geri alma provası tamamlanacak.
 5. **P0 — Gerçek e-posta provası:** Resend hesabı ve doğrulanmış gönderici alan adı hazırlanacak; production değişkenleri eklenip yalnız anonim yönetici bildiriminin gönderildiği doğrulanacak.
@@ -20,7 +20,7 @@ Kalan işleri aşağıdaki sırayla ele alacağız:
 8. **P1 — Staging ve canlıya alma:** Hosting/PostgreSQL seçilecek; minimum yetki, TLS, farklı ortam anahtarları, staging migration, yedek geri yükleme, alan adı/HTTPS/SEO ve rollback kontrolleri tamamlanacak.
 9. **P2 — Canlı sonrası işletim:** İzleme/alarmlar, zamanlanmış temizlikler, bağımlılık güncellemeleri, periyodik erişim kontrolü ve yıllık kriptografi incelemesi planlanacak.
 
-Bir sonraki uygulanacak iş: **1. adımın devamı — takip, admin onayı, iptal ve yüz yüze çözme E2E senaryoları.** Dış uzman ve hukuk onayı gerektiren maddeler teknik çalışmayı engellemez ancak production açılışını engeller. Aşağıdaki ayrıntılı listeler kanıt oluştukça tek tek işaretlenecektir.
+Bir sonraki uygulanacak iş: **2. adımın devamı — POST başladıktan sonra bağlantı kopması için anahtarı kalıcı tarayıcı depolarına yazmadan güvenli ve idempotent retry tasarımı.** Gerçek test sunucusu stdout/stderr sızıntı taraması tamamlandı. Dış uzman ve hukuk onayı gerektiren maddeler teknik çalışmayı engellemez ancak production açılışını engeller. Aşağıdaki ayrıntılı listeler kanıt oluştukça tek tek işaretlenecektir.
 
 ## 0. Gizlilik Öncelik Planı — Şifreli ve Kimlik Gizleyen Randevu Sistemi
 
@@ -537,7 +537,7 @@ Kriptografik mimari çıkış notu: **Sürüm 1 sözleşmesi, şifreli başvuru,
 - [ ] Hassas değerler URL, route segmenti, query string ve fragment içinde taşınmaz.
 - [ ] Referrer policy ve tarayıcı cache davranışı gerçek production origin'de doğrulanır.
 - [ ] Form gönderiminde origin kontrolü, CSRF koruması, honeypot ve merkezi rate limit korunur.
-- [ ] Ciphertext değiştirme, IV değiştirme, metadata değiştirme ve replay saldırıları test edilir.
+- [x] Ciphertext, IV ve metadata değiştirme kripto testleriyle; aynı Server Action gövdesinin replay edilmesi Chromium/PostgreSQL E2E testiyle doğrulandı.
 - [ ] Admin hesaplarında MFA, kısa oturum, oturum iptali ve güçlü parola politikası zorunlu hâle getirilir.
 - [ ] Production database rolü minimum yetkili olur ve doğrulamalı TLS kullanır.
 - [ ] Hosting ve veritabanı yönetici hesaplarında donanım anahtarı veya güçlü MFA kullanılır.
@@ -548,21 +548,21 @@ Kriptografik mimari çıkış notu: **Sürüm 1 sözleşmesi, şifreli başvuru,
 
 ### P1 — Kriptografi ve gizlilik testleri
 
-- [ ] Aynı açık verinin iki gönderimde farklı ciphertext ürettiği test edilir.
-- [ ] Doğru anahtarın veriyi eksiksiz açtığı round-trip testi yazılır.
-- [ ] Yanlış anahtarın veriyi açamadığı test edilir.
-- [ ] Ciphertext'in tek bit değiştirilmesinde doğrulamanın başarısız olduğu test edilir.
-- [ ] IV veya additional authenticated data değiştirildiğinde açmanın başarısız olduğu test edilir.
-- [ ] Türkçe karakter, emoji, uzun metin ve boş isteğe bağlı alanlar round-trip testine alınır.
-- [ ] Maksimum paket boyutu ve aşırı büyük ciphertext reddi test edilir.
+- [x] Aynı açık verinin iki gönderimde farklı ciphertext ürettiği test edildi.
+- [x] Doğru anahtarın veriyi eksiksiz açtığı round-trip testi yazıldı.
+- [x] Yanlış anahtarın veriyi açamadığı test edildi.
+- [x] Ciphertext'in tek bit değiştirilmesinde doğrulamanın başarısız olduğu test edildi.
+- [x] IV veya additional authenticated data değiştirildiğinde açmanın başarısız olduğu test edildi.
+- [x] Türkçe karakter, uzun metin ve boş isteğe bağlı alanlar round-trip testine alındı; emoji sınırı paket testleriyle kapsandı.
+- [x] Maksimum paket boyutu, sabit ciphertext boyutu ve aşırı büyük/kanonik olmayan veri reddi test edildi.
 - [x] Anahtar, plaintext ad, telefon ve e-postanın HTTP request payload'ında bulunmadığı Playwright ile doğrulandı.
-- [ ] Anahtar ve plaintext'in server loglarında bulunmadığı test ortamında yakalanıp doğrulanır.
+- [x] Randevu kayıt ve e-posta hata yollarının yalnız allowlist kod logladığı test edildi; gerçek Next.js test sunucusunun stdout/stderr çıktısı E2E koşusunda e-posta, telefon, test kimliği, anahtar/payload alanı ve XSS işaretçisi sızıntısına karşı taranıyor.
 - [x] Anahtar ve plaintext'in PostgreSQL kaydında bulunmadığı entegrasyon/E2E testiyle doğrulandı.
 - [x] Anahtarın localStorage, sessionStorage, cookie, IndexedDB ve browser URL'sine yazılmadığı Chromium E2E testiyle doğrulandı.
-- [ ] Takip kodu enumeration ve brute-force testleri yapılır.
+- [x] Mevcut olmayan kayıt ile yanlış takip sırrının aynı cevabı verdiği ve rate limitin DB sorgusundan önce devreye girdiği test edildi.
 - [ ] Admin panelinin ciphertext'i HTML'e kontrolsüz basmadığı doğrulanır.
-- [ ] XSS deneme payload'larının şifreleme öncesi ve çözme sonrası güvenli metin olarak işlendiği test edilir.
-- [ ] Kayıp anahtar, yanlış QR, bozuk QR, eski sürüm ve yarıda kalan form senaryoları E2E test edilir.
+- [x] XSS deneme payload'ının ağ/DB'de plaintext bulunmadığı E2E ile; çözme sonrası React tarafından yalnız inert metin render edildiği component testiyle doğrulandı.
+- [ ] Bozuk/eski recovery ve boş yarıda kalan form E2E test edildi; kayıp anahtar ve QR tabanlı senaryolar henüz açık.
 - [ ] Chrome, Firefox, Safari ve mobil tarayıcılarda Web Crypto uyumluluğu doğrulanır.
 - [ ] Production build üzerinde CSP ihlali ve üçüncü taraf ağ isteği taraması yapılır.
 - [ ] Bağımsız uzman kriptografik tasarım ve uygulama incelemesi yapar.
@@ -632,10 +632,10 @@ Kriptografik mimari çıkış notu: **Sürüm 1 sözleşmesi, şifreli başvuru,
 - [x] Chromium E2E ağ kaydında hassas alanların açık hâli veya çözme anahtarı bulunmuyor.
 - [x] PostgreSQL gizlilik denetiminde hassas alanların açık hâli veya çözme anahtarı bulunmuyor.
 - [ ] Sunucu ve yönetici, kullanıcı anahtarı olmadan ciphertext'i çözemiyor.
-- [ ] Yönetici kimliği görmeden talebi onaylayıp reddedebiliyor.
+- [x] Yönetici kimliği açmadan talebi onaylayıp tarih önerebildi ve ayrı negatif E2E akışında talebi reddedebildi.
 - [x] Kullanıcı takip sırrıyla onay durumunu ve önerilen zamanı güvenli biçimde görebiliyor.
-- [ ] Yüz yüze açma yalnız tarayıcıda gerçekleşiyor ve açık veri tekrar kaydedilmiyor.
-- [ ] Anahtar kaybı, yanlış anahtar ve bozuk veri senaryoları güvenli biçimde sonuçlanıyor.
+- [x] Yüz yüze açmanın yalnız tarayıcıda gerçekleştiği, çözme anahtarının POST gövdelerine girmediği ve açık verinin tekrar kaydedilmediği Chromium E2E testiyle doğrulandı.
+- [x] Yanlış anahtar/tamper kripto testleri ve bozuk recovery Chromium E2E testi güvenli biçimde sonuçlandı.
 - [ ] Log, e-posta, analitik, audit ve hata izleme sistemlerine açık hassas veri gitmiyor.
 - [x] Eski plaintext veri modeli kaldırıldı; onaylanan yerel test kaydı silindi ve şema denetimi geçti.
 - [ ] Otomatik testler, E2E testleri, bağımsız güvenlik incelemesi ve hukuk onayı tamamlanmış.
@@ -657,9 +657,9 @@ Teknik referanslar: [OWASP Cryptographic Storage Cheat Sheet](https://cheatsheet
 
 - [x] Playwright ve yerel Chromium test tarayıcısı kuruldu; Windows'ta temiz kapanan test runner eklendi.
 - [ ] Ana sayfa ve temel navigasyon için E2E testi yazılır.
-- [ ] Randevu formunun başarılı ve hatalı gönderim E2E testleri yazılır.
+- [x] Randevu formunun başarılı gönderim, boş form, çevrimdışı retry, bozuk/eski recovery ve replay E2E testleri yazıldı.
 - [ ] Yönetici giriş, çıkış ve başarısız giriş E2E testleri yazılır.
-- [ ] Randevu görüntüleme ve durum değiştirme E2E testi yazılır.
+- [x] Anonim takip, admin görüntüleme/onay/tarih önerisi, yüz yüze çözme ve kullanıcı iptali yaşam döngüsü Chromium E2E testi yazıldı.
 - [ ] Makale oluşturma, düzenleme, yayımlama ve arşivleme E2E testi yazılır.
 - [ ] Gerçek HTTP ve test PostgreSQL kullanılarak auth/oturum entegrasyon testi tamamlanır.
 - [ ] Süresi dolmuş ve iptal edilmiş oturumların korunan sayfalara erişemediği doğrulanır.
@@ -671,7 +671,7 @@ Teknik referanslar: [OWASP Cryptographic Storage Cheat Sheet](https://cheatsheet
 - [ ] Ana sayfa ve tüm navigasyon bağlantıları tek tek kontrol edilir.
 - [ ] İletişim ve randevu formu klavyeyle kullanılabilirlik açısından test edilir.
 - [ ] Form hata mesajları ekran okuyucuyla kontrol edilir.
-- [ ] Yavaş internet ve bağlantı kesintisi senaryoları denenir.
+- [ ] Çevrimdışı gönderim güvenli biçimde durdurulup aynı bellek içi paketle retry edildi; yavaş ağ ve POST başladıktan sonra kopma senaryosu açık.
 - [ ] Chrome, Firefox, Safari ve Edge üzerinde kontrol yapılır.
 - [ ] Gerçek Android ve iPhone cihazlarda kontrol yapılır.
 - [ ] Mobil, tablet ve masaüstünde yatay taşma olmadığı doğrulanır.
