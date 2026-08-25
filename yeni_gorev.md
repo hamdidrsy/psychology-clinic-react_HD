@@ -1,12 +1,12 @@
 # Psychology Clinic — Kalan Görevler
 
-Son güncelleme: 21 Ağustos 2026
+Son güncelleme: 24 Ağustos 2026
 
 Bu dosya, projeyi güvenli şekilde canlıya almak ve canlı sonrasında işletmek için kalan işleri içerir. Gizlilik mimarisi tamamlanmadan randevu sistemi production ortamına açılmamalıdır.
 
 ## Güncel durum ve buradan devam sırası
 
-Bulunduğumuz aşama: **Şifreli randevu mimarisi ve temel anonim akış tamamlandı; şimdi production öncesi doğrulama ve güvenlik sağlamlaştırması aşamasındayız.** Form tarayıcıda şifreleme yapıyor, PostgreSQL plaintext kimlik alanı tutmuyor, kullanıcı gizli belgeyle durum görebiliyor/iptal edebiliyor, admin kimliği açmadan karar ve zaman önerisi girebiliyor, yüz yüze çözme yalnız tarayıcıda gerçekleşiyor. Son kontrolde 76 birim/entegrasyon testi ve 6 Chromium E2E testi geçti; lint, TypeScript, production build ve npm audit temiz.
+Bulunduğumuz aşama: **Şifreli randevu mimarisi ve temel anonim akış tamamlandı; şimdi production öncesi doğrulama ve güvenlik sağlamlaştırması aşamasındayız.** Form tarayıcıda şifreleme yapıyor, PostgreSQL plaintext kimlik alanı tutmuyor, kullanıcı gizli belgeyle durum görebiliyor/iptal edebiliyor, admin kimliği açmadan karar ve zaman önerisi girebiliyor, yüz yüze çözme yalnız tarayıcıda gerçekleşiyor. Son kontrolde 76 birim/entegrasyon testi ve 7 Chromium E2E testi geçti; lint, TypeScript, production build, secret taraması ve npm audit temiz.
 
 Kalan işleri aşağıdaki sırayla ele alacağız:
 
@@ -658,10 +658,10 @@ Teknik referanslar: [OWASP Cryptographic Storage Cheat Sheet](https://cheatsheet
 - [x] Playwright ve yerel Chromium test tarayıcısı kuruldu; Windows'ta temiz kapanan test runner eklendi.
 - [ ] Ana sayfa ve temel navigasyon için E2E testi yazılır.
 - [x] Randevu formunun başarılı gönderim, boş form, çevrimdışı retry, bozuk/eski recovery ve replay E2E testleri yazıldı.
-- [ ] Yönetici giriş, çıkış ve başarısız giriş E2E testleri yazılır.
+- [x] Yönetici başarısız giriş, başarılı giriş, korunan sayfaya erişim, hash'li oturum kaydı, çıkış ve oturum iptali Chromium E2E testi yazıldı.
 - [x] Anonim takip, admin görüntüleme/onay/tarih önerisi, yüz yüze çözme ve kullanıcı iptali yaşam döngüsü Chromium E2E testi yazıldı.
 - [ ] Makale oluşturma, düzenleme, yayımlama ve arşivleme E2E testi yazılır.
-- [ ] Gerçek HTTP ve test PostgreSQL kullanılarak auth/oturum entegrasyon testi tamamlanır.
+- [x] Gerçek HTTP ve test PostgreSQL kullanılarak auth/oturum entegrasyon testi tamamlandı.
 - [ ] Süresi dolmuş ve iptal edilmiş oturumların korunan sayfalara erişemediği doğrulanır.
 - [ ] Production benzeri veri üzerinde migration yükseltme provası yapılır.
 - [ ] Boş veritabanından en güncel şemaya migration işlemi staging ortamında doğrulanır.

@@ -12,7 +12,8 @@ const forbiddenServerLogPatterns = [
   { label: "test phone number", pattern: /\+9055\d{8,}/ },
   {
     label: "sensitive payload or key field",
-    pattern: /["']?(?:dataKey|trackingSecret|encryptedPayload|ciphertext)["']?\s*[:=]/i,
+    pattern:
+      /["']?(?:dataKey|trackingSecret|encryptedPayload|ciphertext)["']?\s*[:=]/i,
   },
   { label: "XSS test marker", pattern: /window\.__(?:e2eXss|decryptXss)/i },
   {
