@@ -2,57 +2,73 @@
 
 Son güncelleme: 27 Ağustos 2026
 
-## Tamamlananlar
+## Hazır olanlar
 
-- [x] Şifreli randevu ve anonim takip
-- [x] Admin paneli ve oturum güvenliği
-- [x] PostgreSQL/Prisma entegrasyonu
-- [x] 84 birim/entegrasyon testi
-- [x] 8 Chromium E2E testi
-- [x] Build, lint, typecheck ve format
-- [x] npm audit: 0 açık
-- [x] Secret ve sunucu log taraması
+- [x] Şifreli randevu, anonim takip ve admin paneli
+- [x] PostgreSQL/Prisma ve veri temizleme sistemi
+- [x] MFA, güvenlik kontrolleri ve korumalı cron endpoint'leri
+- [x] Vercel cron ve production ortam denetimi
+- [x] 88 test, 8 Chromium E2E, build ve güvenlik taramaları
 
-## P0 — Canlı öncesi
+## Canlıya alma sırası
 
-- [x] Güvenli bağlantı kopması/retry akışı
-- [x] Admin MFA kodu ve şifreli TOTP sırrı
-- [ ] Gerçek admin hesabında MFA kurulumu
-- [x] Veri temizleme servisi ve saklama süreleri
-- [ ] Production temizlik cron'u
-- [x] Anonim kalıcı silme talebi
-- [ ] Resend alan adı ve gerçek e-posta testi
-- [x] Anonim e-posta retry ve korumalı cron endpoint'i
-- [ ] Gerçek biyografi ve iletişim bilgileri
-- [ ] Taslak/örnek içeriklerin kaldırılması
-- [ ] KVKK ve hukuk onayı
-- [ ] Çocuk/veli/onam prosedürü
-- [ ] Bağımsız güvenlik incelemesi
+### 1. İçerik ve hukuk
 
-## Altyapı
+- [ ] Gerçek biyografi, hizmet ve iletişim bilgilerini gir
+- [ ] Taslak/örnek içerikleri kaldır
+- [ ] KVKK, gizlilik, çerez ve saklama sürelerini hukukçuya onaylat
+- [ ] Çocuk/veli/onam prosedürünü kesinleştir
 
-- [ ] Vercel projesi
-- [ ] Staging ortamı
-- [ ] Production PostgreSQL
-- [ ] TLS ve minimum DB yetkisi
-- [ ] Production secret'ları
-- [ ] Alan adı, DNS ve HTTPS
-- [ ] Veritabanı yedekleme
-- [ ] Yedekten geri yükleme testi
-- [ ] Rollback testi
+### 2. Hesaplar ve hizmetler
 
-## Son kontroller
+- [ ] Vercel Pro projesini oluştur
+- [ ] Production PostgreSQL sağlayıcısını seç
+- [ ] Resend hesabını ve gönderici alan adını doğrula
+- [ ] Alan adını satın al veya mevcut alan adını hazırla
+- [ ] Vercel, veritabanı, Resend ve domain hesaplarında MFA aç
 
-- [ ] Staging migration
-- [ ] Production E2E testi
-- [ ] Chrome, Firefox, Safari ve Edge testi
-- [ ] Android ve iPhone testi
-- [ ] Erişilebilirlik ve Lighthouse testi
-- [ ] SEO, sitemap, robots ve canonical kontrolü
-- [ ] Production log sızıntısı kontrolü
-- [ ] Yönetici ve altyapı hesaplarında MFA
-- [ ] Canlı sonrası izleme ve alarmlar
+### 3. Staging ortamı
 
-## Sıradaki adım
+- [ ] Vercel Preview ortamını staging olarak yapılandır
+- [ ] Ayrı staging PostgreSQL veritabanı oluştur
+- [ ] TLS ve minimum yetkili DB kullanıcılarını oluştur
+- [ ] Staging secret'larını Vercel'e gir
+- [ ] `npm run prisma:migrate:deploy` çalıştır
+- [ ] Admin hesabını oluştur ve MFA kur
+- [ ] Randevu, takip, admin ve e-posta akışını test et
+- [ ] Chrome, Firefox, Safari, Edge, Android ve iPhone testi yap
+- [ ] Lighthouse, erişilebilirlik ve SEO kontrolü yap
 
-- [ ] Vercel, alan adı ve production PostgreSQL seçimi
+### 4. Production ortamı
+
+- [ ] Ayrı production PostgreSQL veritabanı oluştur
+- [ ] Otomatik yedekleme/PITR ve saklama süresini aç
+- [ ] Production secret'larını Vercel'e gir
+- [ ] İlk veritabanı yedeğini al
+- [ ] Production migration çalıştır
+- [ ] Production admin hesabını oluştur ve MFA kur
+- [ ] Production deployment yap
+- [ ] Alan adı, DNS ve HTTPS bağlantısını tamamla
+- [ ] Resend ile gerçek e-posta testi yap
+- [ ] Bildirim ve temizlik cron'larının çalıştığını doğrula
+
+### 5. Canlı kabul ve güvenlik
+
+- [ ] Gerçek randevu yaşam döngüsü E2E testi yap
+- [ ] Şifreli verinin açık kimlik içermediğini doğrula
+- [ ] Sitemap, robots, canonical ve yapılandırılmış veriyi doğrula
+- [ ] Production loglarında kişisel veri/secret sızıntısı ara
+- [ ] Rate limiting ve bot korumasını kontrol et
+- [ ] Bağımsız güvenlik incelemesi yaptır
+
+### 6. Geri alma ve bakım
+
+- [ ] Son sağlam deployment'a rollback testi yap
+- [ ] Yedeği izole test veritabanına geri yükle
+- [ ] Hata, cron ve e-posta izleme/alarmlarını aç
+- [ ] Aylık yedek geri yükleme testi planla
+- [ ] Güvenlik güncellemesi ve KVKK silme takvimi oluştur
+
+## Şimdi yapılacak
+
+- [ ] Vercel Pro, PostgreSQL sağlayıcısı, Resend ve alan adı kararlarını ver
