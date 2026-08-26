@@ -10,6 +10,13 @@ import { getDb } from "@/server/db";
 import { getServerEnv, requireServerEnv } from "@/server/env";
 
 const resendTimeoutMs = 10_000;
+const maxNotificationAttempts = 3;
+
+export function notificationRetryDate(attemptNumber: number, now = new Date()) {
+  const delays = [5 * 60_000, 30 * 60_000] as const;
+  const delay = delays[attemptNumber - 1];
+  return delay === undefined ? null : new Date(now.getTime() + delay);
+}
 
 export async function withTimeout<T>(
   promise: Promise<T>,
@@ -48,10 +55,12 @@ export async function sendAppointmentNotification({
   notificationId,
   requestId,
   templateInput,
+  previousAttemptCount = 0,
 }: {
   notificationId: string;
   requestId: string;
   templateInput: AppointmentNotificationTemplateInput;
+  previousAttemptCount?: number;
 }) {
   const db = getDb();
   const template = appointmentNotificationTemplate(templateInput);
@@ -110,7 +119,7 @@ export async function sendAppointmentNotification({
         status: "FAILED",
         attemptCount: { increment: 1 },
         lastAttemptAt: attemptedAt,
-        nextAttemptAt: new Date(Date.now() + 5 * 60 * 1000),
+        nextAttemptAt: notificationRetryDate(previousAttemptCount + 1),
         failureCode,
       },
     });
@@ -125,13 +134,14 @@ export async function retryPendingAppointmentNotifications(limit = 20) {
   const notifications = await db.appointmentNotification.findMany({
     where: {
       status: { in: ["PENDING", "FAILED"] },
-      attemptCount: { lt: 3 },
+      attemptCount: { lt: maxNotificationAttempts },
       OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: now } }],
     },
     orderBy: { createdAt: "asc" },
     take: Math.min(Math.max(limit, 1), 100),
     select: {
       id: true,
+      attemptCount: true,
       appointmentRequest: {
         select: {
           id: true,
@@ -151,6 +161,7 @@ export async function retryPendingAppointmentNotifications(limit = 20) {
         templateInput: {
           createdAt: request.createdAt,
         },
+        previousAttemptCount: notification.attemptCount,
       }),
     );
   }

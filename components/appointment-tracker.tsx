@@ -5,6 +5,8 @@ import { startTransition, useActionState, useState } from "react";
 import {
   cancelAppointment,
   type CancellationState,
+  deleteAppointment,
+  type DeletionState,
   trackAppointment,
   type TrackingState,
 } from "@/app/randevu-takip/actions";
@@ -14,6 +16,7 @@ import { validateRecoveryV1 } from "@/lib/appointments/crypto";
 
 const initialState: TrackingState = { status: "idle" };
 const initialCancellationState: CancellationState = { status: "idle" };
+const initialDeletionState: DeletionState = { status: "idle" };
 
 export function AppointmentTracker() {
   const [state, action, pending] = useActionState(
@@ -23,6 +26,10 @@ export function AppointmentTracker() {
   const [cancellation, cancelAction, cancellationPending] = useActionState(
     cancelAppointment,
     initialCancellationState,
+  );
+  const [deletion, deleteAction, deletionPending] = useActionState(
+    deleteAppointment,
+    initialDeletionState,
   );
   const [recovery, setRecovery] = useState<ReturnType<
     typeof validateRecoveryV1
@@ -142,6 +149,45 @@ export function AppointmentTracker() {
       {cancellation.status === "cancelled" && (
         <Alert title="Talep iptal edildi" variant="success">
           {cancellation.message}
+        </Alert>
+      )}
+      {state.status === "found" && deletion.status !== "deleted" && (
+        <div className="rounded-2xl border border-red-300 bg-red-50 p-5">
+          <h3 className="font-semibold text-red-900">Talebi kalıcı sil</h3>
+          <p className="mt-2 text-sm leading-6 text-red-800">
+            Şifreli kayıt ve bağlı geçmiş kalıcı silinir. Bu işlem geri
+            alınamaz.
+          </p>
+          <button
+            className="button-secondary mt-4"
+            disabled={!recovery || deletionPending}
+            onClick={() => {
+              if (
+                !recovery ||
+                !window.confirm(
+                  "Bu şifreli talebi kalıcı olarak silmek istediğinizden emin misiniz?",
+                )
+              )
+                return;
+              const data = new FormData();
+              data.set("requestId", recovery.requestId);
+              data.set("trackingSecret", recovery.trackingSecret);
+              startTransition(() => deleteAction(data));
+            }}
+            type="button"
+          >
+            {deletionPending ? "Siliniyor…" : "Talebimi kalıcı sil"}
+          </button>
+        </div>
+      )}
+      {deletion.status === "error" && (
+        <Alert title="Talep silinemedi" variant="error">
+          {deletion.message}
+        </Alert>
+      )}
+      {deletion.status === "deleted" && (
+        <Alert title="Talep silindi" variant="success">
+          {deletion.message}
         </Alert>
       )}
     </section>

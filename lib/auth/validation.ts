@@ -18,6 +18,12 @@ export const adminPasswordSchema = z
 export const loginSchema = z.object({
   email: adminEmailSchema,
   password: z.string().min(1).max(128),
+  totpCode: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/u)
+    .optional()
+    .or(z.literal("")),
   next: z.string().optional(),
 });
 

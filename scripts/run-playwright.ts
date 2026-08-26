@@ -6,6 +6,7 @@ const root = process.cwd();
 const nextCli = resolve(root, "node_modules/next/dist/bin/next");
 const playwrightCli = resolve(root, "node_modules/@playwright/test/cli.js");
 const maxCapturedServerLogLength = 1_000_000;
+const e2eMfaEncryptionKey = Buffer.alloc(32, 17).toString("base64url");
 
 const forbiddenServerLogPatterns = [
   { label: "test e-mail address", pattern: /[A-Z0-9._%+-]+@example\.test/i },
@@ -65,7 +66,10 @@ const server = spawn(
   [nextCli, "start", "--hostname", "127.0.0.1", "--port", "3100"],
   {
     cwd: root,
-    env: process.env,
+    env: {
+      ...process.env,
+      MFA_ENCRYPTION_KEY: process.env.MFA_ENCRYPTION_KEY ?? e2eMfaEncryptionKey,
+    },
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true,
   },

@@ -15,6 +15,7 @@ import {
   DUMMY_PASSWORD_HASH,
   verifyAdminPassword,
 } from "@/server/auth/password";
+import { decryptTotpSecret, verifyTotp } from "@/server/auth/mfa";
 import { getDb } from "@/server/db";
 import { getServerEnv, requireServerEnv } from "@/server/env";
 import { consumeRateLimit } from "@/server/rate-limit";
@@ -45,6 +46,7 @@ export async function loginAdmin(
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
+    totpCode: formData.get("totpCode") || undefined,
     next: formData.get("next") || undefined,
   });
   if (!parsed.success) {
@@ -104,6 +106,27 @@ export async function loginAdmin(
       });
       await finishDelay();
       return { message: genericLoginError };
+    }
+
+    if (user.mfaEnabledAt) {
+      requireServerEnv(env, ["MFA_ENCRYPTION_KEY"] as const);
+      const validTotp = Boolean(
+        user.mfaSecretEncrypted &&
+        parsed.data.totpCode &&
+        verifyTotp(
+          decryptTotpSecret(user.mfaSecretEncrypted, env.MFA_ENCRYPTION_KEY),
+          parsed.data.totpCode,
+        ),
+      );
+      if (!validTotp) {
+        await writeAuditLog({
+          action: "ADMIN_LOGIN_FAILED",
+          entityType: "AdminUser",
+          metadata: { reason: "invalid_mfa" },
+        });
+        await finishDelay();
+        return { message: genericLoginError };
+      }
     }
 
     await db.$transaction([

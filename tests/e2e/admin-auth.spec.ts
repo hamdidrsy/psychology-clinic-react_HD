@@ -4,6 +4,11 @@ import argon2 from "argon2";
 import { Pool } from "pg";
 
 import { PrismaClient } from "@/generated/prisma/client";
+import {
+  encryptTotpSecret,
+  generateTotpSecret,
+  totpCode,
+} from "@/server/auth/mfa";
 
 test("rejects invalid credentials, creates a protected session and logs out", async ({
   page,
@@ -20,6 +25,8 @@ test("rejects invalid credentials, creates a protected session and logs out", as
   const marker = crypto.randomUUID().slice(0, 8);
   const adminEmail = `e2e-auth-${marker}@example.test`;
   const adminPassword = `E2e-${marker}-Guvenli!42`;
+  const mfaEncryptionKey = Buffer.alloc(32, 17).toString("base64url");
+  const mfaSecret = generateTotpSecret();
   const admin = await prisma.adminUser.create({
     data: {
       email: adminEmail,
@@ -31,6 +38,8 @@ test("rejects invalid credentials, creates a protected session and logs out", as
         parallelism: 1,
       }),
       role: "ADMIN",
+      mfaSecretEncrypted: encryptTotpSecret(mfaSecret, mfaEncryptionKey),
+      mfaEnabledAt: new Date(),
     },
   });
   let failureAuditId: string | undefined;
@@ -72,6 +81,17 @@ test("rejects invalid credentials, creates a protected session and logs out", as
     await page.reload();
     await page.getByLabel("E-posta").fill(adminEmail);
     await page.getByLabel("Parola").fill(adminPassword);
+    await page.getByRole("button", { name: "Giriş yap" }).click();
+    await expect(
+      page.getByText("E-posta veya parola hatalı. Lütfen tekrar deneyin.", {
+        exact: true,
+      }),
+    ).toBeVisible();
+
+    await page.reload();
+    await page.getByLabel("E-posta").fill(adminEmail);
+    await page.getByLabel("Parola").fill(adminPassword);
+    await page.getByLabel("Doğrulama kodu").fill(totpCode(mfaSecret));
     await page.getByRole("button", { name: "Giriş yap" }).click();
     await expect(page).toHaveURL(/\/admin\/randevu-talepleri$/);
     await expect(page.getByText("E2E Auth Admin · ADMIN")).toBeVisible();

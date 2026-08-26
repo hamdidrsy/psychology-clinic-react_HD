@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
   updateMany: vi.fn(),
   historyCreate: vi.fn(),
   auditCreate: vi.fn(),
+  auditDeleteMany: vi.fn(),
+  appointmentDelete: vi.fn(),
   consumeRateLimit: vi.fn(),
 }));
 
@@ -38,9 +40,15 @@ vi.mock("@/server/security/request-origin", () => ({
 }));
 vi.mock("@/server/db", () => {
   const transaction = {
-    appointmentRequest: { updateMany: mocks.updateMany },
+    appointmentRequest: {
+      updateMany: mocks.updateMany,
+      delete: mocks.appointmentDelete,
+    },
     appointmentStatusHistory: { create: mocks.historyCreate },
-    auditLog: { create: mocks.auditCreate },
+    auditLog: {
+      create: mocks.auditCreate,
+      deleteMany: mocks.auditDeleteMany,
+    },
   };
   return {
     getDb: () => ({
@@ -53,6 +61,7 @@ vi.mock("@/server/db", () => {
 
 import {
   cancelAppointment,
+  deleteAppointment,
   trackAppointment,
 } from "@/app/randevu-takip/actions";
 
@@ -81,6 +90,8 @@ describe("anonymous appointment tracking actions", () => {
     mocks.updateMany.mockResolvedValue({ count: 1 });
     mocks.historyCreate.mockResolvedValue({});
     mocks.auditCreate.mockResolvedValue({});
+    mocks.auditDeleteMany.mockResolvedValue({ count: 1 });
+    mocks.appointmentDelete.mockResolvedValue({});
   });
 
   it("returns status only when request id and tracking secret match", async () => {
@@ -168,5 +179,29 @@ describe("anonymous appointment tracking actions", () => {
       message: "Bu talep artık iptal edilemez.",
     });
     expect(mocks.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("permanently deletes only the verified request and its linked audit", async () => {
+    const result = await deleteAppointment({ status: "idle" }, trackingForm());
+
+    expect(result).toEqual({
+      status: "deleted",
+      message: "Şifreli talebiniz kalıcı olarak silindi.",
+    });
+    expect(mocks.auditDeleteMany).toHaveBeenCalledWith({
+      where: {
+        entityType: "AppointmentRequest",
+        entityId: "03a35f70-7b3f-40e9-94c7-b377cd95c764",
+      },
+    });
+    expect(mocks.appointmentDelete).toHaveBeenCalledWith({
+      where: { id: "03a35f70-7b3f-40e9-94c7-b377cd95c764" },
+    });
+    expect(mocks.auditCreate).toHaveBeenCalledWith({
+      data: {
+        action: "APPOINTMENT_DELETED_BY_REQUESTER",
+        entityType: "System",
+      },
+    });
   });
 });

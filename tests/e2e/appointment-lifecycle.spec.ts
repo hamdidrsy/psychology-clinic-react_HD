@@ -46,6 +46,7 @@ test("tracks, approves, decrypts and cancels an anonymous request", async ({
 
   let requestId: string | undefined;
   let appointmentId: string | undefined;
+  let deletionAuditId: string | undefined;
   try {
     await page.goto("/iletisim");
     await page.getByLabel("Ad soyad").fill(identity.fullName);
@@ -145,7 +146,26 @@ test("tracks, approves, decrypts and cancels an anonymous request", async ({
     expect(cancelled.statusHistory.map((item) => item.toStatus)).toEqual(
       expect.arrayContaining(["PENDING", "APPROVED", "CANCELLED"]),
     );
+
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "Talebimi kalıcı sil" }).click();
+    await expect(
+      page.getByText("Şifreli talebiniz kalıcı olarak silindi."),
+    ).toBeVisible();
+    await expect(
+      prisma.appointmentRequest.findUnique({ where: { requestId } }),
+    ).resolves.toBeNull();
+    deletionAuditId = (
+      await prisma.auditLog.findFirst({
+        where: { action: "APPOINTMENT_DELETED_BY_REQUESTER" },
+        orderBy: { createdAt: "desc" },
+        select: { id: true },
+      })
+    )?.id;
   } finally {
+    if (deletionAuditId) {
+      await prisma.auditLog.deleteMany({ where: { id: deletionAuditId } });
+    }
     if (appointmentId) {
       await prisma.auditLog.deleteMany({
         where: { entityType: "AppointmentRequest", entityId: appointmentId },

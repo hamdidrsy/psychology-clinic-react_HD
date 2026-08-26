@@ -26,7 +26,11 @@ describe("admin TOTP MFA", () => {
     expect(encrypted).not.toContain(secret);
     expect(decryptTotpSecret(encrypted, key)).toBe(secret);
 
-    const tampered = `${encrypted.slice(0, -1)}${encrypted.endsWith("A") ? "B" : "A"}`;
+    const parts = encrypted.split(".");
+    const ciphertext = Buffer.from(parts[3]!, "base64url");
+    ciphertext[0] = ciphertext[0]! ^ 1;
+    parts[3] = ciphertext.toString("base64url");
+    const tampered = parts.join(".");
     expect(() => decryptTotpSecret(tampered, key)).toThrow();
   });
 

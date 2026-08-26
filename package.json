@@ -27,6 +27,7 @@
     "admin:create": "tsx scripts/create-admin.ts",
     "admin:reset-password": "tsx scripts/reset-admin-password.ts",
     "admin:revoke-sessions": "tsx scripts/revoke-admin-sessions.ts",
+    "admin:mfa:setup": "tsx scripts/setup-admin-mfa.ts",
     "appointments:purge-expired": "tsx scripts/purge-expired-appointments.ts",
     "appointments:audit-privacy": "tsx scripts/audit-appointment-privacy.ts",
     "privacy:cleanup-expired": "tsx scripts/cleanup-expired-operational-data.ts",

@@ -43,6 +43,24 @@ export function AdminLoginForm() {
           type="password"
         />
       </div>
+      <div>
+        <label className="form-label" htmlFor="admin-totp-code">
+          Doğrulama kodu
+        </label>
+        <input
+          autoComplete="one-time-code"
+          className="form-control"
+          id="admin-totp-code"
+          inputMode="numeric"
+          maxLength={6}
+          name="totpCode"
+          pattern="[0-9]{6}"
+          placeholder="000000"
+        />
+        <p className="text-muted mt-2 text-xs">
+          MFA etkinse doğrulama uygulamanızdaki 6 haneli kodu girin.
+        </p>
+      </div>
       {state.message && (
         <p
           className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"

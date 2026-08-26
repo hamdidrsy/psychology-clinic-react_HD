@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { appointmentNotificationTemplate } from "@/emails/appointment-notification";
 import {
   appointmentEmailFailureCode,
+  notificationRetryDate,
   withTimeout,
 } from "@/server/appointments/notification";
 
@@ -47,5 +48,19 @@ describe("email failure logging", () => {
         new Error("provider echoed a@example.test and secret-token"),
       ),
     ).toBe("PROVIDER_ERROR");
+  });
+});
+
+describe("email retry schedule", () => {
+  const now = new Date("2026-08-27T12:00:00.000Z");
+
+  it("uses bounded increasing delays and stops after the third attempt", () => {
+    expect(notificationRetryDate(1, now)).toEqual(
+      new Date("2026-08-27T12:05:00.000Z"),
+    );
+    expect(notificationRetryDate(2, now)).toEqual(
+      new Date("2026-08-27T12:30:00.000Z"),
+    );
+    expect(notificationRetryDate(3, now)).toBeNull();
   });
 });

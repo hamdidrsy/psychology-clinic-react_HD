@@ -1,13 +1,13 @@
 # Kalan Görevler
 
-Son güncelleme: 26 Ağustos 2026
+Son güncelleme: 27 Ağustos 2026
 
 ## Tamamlananlar
 
 - [x] Şifreli randevu ve anonim takip
 - [x] Admin paneli ve oturum güvenliği
 - [x] PostgreSQL/Prisma entegrasyonu
-- [x] 76 birim/entegrasyon testi
+- [x] 84 birim/entegrasyon testi
 - [x] 8 Chromium E2E testi
 - [x] Build, lint, typecheck ve format
 - [x] npm audit: 0 açık
@@ -16,10 +16,13 @@ Son güncelleme: 26 Ağustos 2026
 ## P0 — Canlı öncesi
 
 - [x] Güvenli bağlantı kopması/retry akışı
-- [ ] Admin MFA
-- [ ] Otomatik veri temizliği
-- [ ] Anonim silme talebi
+- [x] Admin MFA kodu ve şifreli TOTP sırrı
+- [ ] Gerçek admin hesabında MFA kurulumu
+- [x] Veri temizleme servisi ve saklama süreleri
+- [ ] Production temizlik cron'u
+- [x] Anonim kalıcı silme talebi
 - [ ] Resend alan adı ve gerçek e-posta testi
+- [x] Anonim e-posta retry ve korumalı cron endpoint'i
 - [ ] Gerçek biyografi ve iletişim bilgileri
 - [ ] Taslak/örnek içeriklerin kaldırılması
 - [ ] KVKK ve hukuk onayı

@@ -30,6 +30,11 @@ export type CancellationState = {
   message?: string;
 };
 
+export type DeletionState = {
+  status: "idle" | "error" | "deleted";
+  message?: string;
+};
+
 const genericError = "Başvuru bilgileri doğrulanamadı.";
 
 export async function trackAppointment(
@@ -196,6 +201,83 @@ export async function cancelAppointment(
     return cancelled
       ? { status: "cancelled", message: "Talebiniz iptal edildi." }
       : { status: "error", message: "Bu talep artık iptal edilemez." };
+  } catch {
+    return { status: "error", message: genericError };
+  }
+}
+
+export async function deleteAppointment(
+  _state: DeletionState,
+  formData: FormData,
+): Promise<DeletionState> {
+  const requestHeaders = await headers();
+  const env = getServerEnv();
+  if (!hasValidRequestOrigin(requestHeaders, env.TRUST_PROXY_HEADERS)) {
+    return { status: "error", message: genericError };
+  }
+  const requestId = formData.get("requestId");
+  const trackingSecret = formData.get("trackingSecret");
+  if (typeof requestId !== "string" || typeof trackingSecret !== "string") {
+    return { status: "error", message: genericError };
+  }
+  try {
+    base32ToBytes(requestId, 16);
+    base64UrlToBytes(trackingSecret, 32);
+    requireServerEnv(env, ["DATABASE_URL", "TRACKING_HMAC_KEY_V1"] as const);
+    const db = getDb();
+    const address = trustedClientAddress(
+      requestHeaders,
+      env.TRUST_PROXY_HEADERS,
+    );
+    const rateLimit = await consumeRateLimit({
+      keyHash: privacyPreservingHash(
+        `appointment-delete/v1:${address ?? "global"}`,
+        env.TRACKING_HMAC_KEY_V1,
+      ),
+      limit: address ? 5 : 25,
+      windowSeconds: 10 * 60,
+      db,
+    });
+    if (!rateLimit.allowed) {
+      return { status: "error", message: "Çok fazla deneme yapıldı." };
+    }
+    const appointment = await db.appointmentRequest.findUnique({
+      where: { requestId },
+      select: { id: true, trackingSecretHash: true, trackingKeyVersion: true },
+    });
+    const candidate = appointmentTrackingHash(
+      trackingSecret,
+      env.TRACKING_HMAC_KEY_V1,
+    );
+    const expected = appointment?.trackingSecretHash ?? "0".repeat(64);
+    if (
+      !appointment ||
+      appointment.trackingKeyVersion !== 1 ||
+      !timingSafeEqual(
+        Buffer.from(candidate, "hex"),
+        Buffer.from(expected, "hex"),
+      )
+    ) {
+      return { status: "error", message: genericError };
+    }
+    await db.$transaction(async (transaction) => {
+      await transaction.auditLog.deleteMany({
+        where: { entityType: "AppointmentRequest", entityId: appointment.id },
+      });
+      await transaction.appointmentRequest.delete({
+        where: { id: appointment.id },
+      });
+      await transaction.auditLog.create({
+        data: {
+          action: "APPOINTMENT_DELETED_BY_REQUESTER",
+          entityType: "System",
+        },
+      });
+    });
+    return {
+      status: "deleted",
+      message: "Şifreli talebiniz kalıcı olarak silindi.",
+    };
   } catch {
     return { status: "error", message: genericError };
   }

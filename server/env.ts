@@ -18,6 +18,7 @@ const serverEnvSchema = z.object({
   AUTH_SECRET: optionalSecret.pipe(z.string().min(32).optional()),
   TRACKING_HMAC_KEY_V1: optionalSecret.pipe(z.string().min(32).optional()),
   MFA_ENCRYPTION_KEY: optionalSecret,
+  CRON_SECRET: optionalSecret.pipe(z.string().min(32).optional()),
   ADMIN_SESSION_HOURS: z.coerce.number().int().min(1).max(24).default(8),
   APPOINTMENT_RETENTION_DAYS: z.coerce
     .number()
@@ -25,6 +26,7 @@ const serverEnvSchema = z.object({
     .min(1)
     .max(3650)
     .default(90),
+  AUDIT_RETENTION_DAYS: z.coerce.number().int().min(30).max(3650).default(365),
   TRUST_PROXY_HEADERS: z
     .enum(["true", "false"])
     .default("false")

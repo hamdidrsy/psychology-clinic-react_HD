@@ -6,6 +6,7 @@ const defaults = {
   NODE_ENV: "test",
   ADMIN_SESSION_HOURS: 8,
   APPOINTMENT_RETENTION_DAYS: 90,
+  AUDIT_RETENTION_DAYS: 365,
   TRUST_PROXY_HEADERS: false,
 } as const;
 

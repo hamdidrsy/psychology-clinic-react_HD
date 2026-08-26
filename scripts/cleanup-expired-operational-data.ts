@@ -1,63 +1,36 @@
 import { config as loadEnv } from "dotenv";
-import { PrismaPg } from "@prisma/adapter-pg";
 
-import { PrismaClient } from "../generated/prisma/client";
+import { adminDb } from "./admin-cli";
 
 loadEnv({ path: ".env.local", quiet: true });
 loadEnv({ quiet: true });
 
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) throw new Error("DATABASE_URL zorunludur.");
-const db = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: databaseUrl }),
-});
-
-try {
-  const now = new Date();
-  const oldSessionCutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const [rateLimitCount, sessionCount] = await Promise.all([
-    db.rateLimitBucket.count({ where: { expiresAt: { lte: now } } }),
-    db.adminSession.count({
-      where: {
-        OR: [
-          { expiresAt: { lte: oldSessionCutoff } },
-          { revokedAt: { lte: oldSessionCutoff } },
-        ],
-      },
-    }),
-  ]);
-
+async function main() {
   if (process.env.CONFIRM_PRIVACY_CLEANUP !== "yes") {
-    console.log(
-      `Dry-run: ${rateLimitCount} süresi dolmuş rate-limit kaydı ve ${sessionCount} eski oturum kaydı bulundu.`,
-    );
-  } else {
-    const [rateLimits, sessions] = await db.$transaction([
-      db.rateLimitBucket.deleteMany({ where: { expiresAt: { lte: now } } }),
-      db.adminSession.deleteMany({
-        where: {
-          OR: [
-            { expiresAt: { lte: oldSessionCutoff } },
-            { revokedAt: { lte: oldSessionCutoff } },
-          ],
-        },
-      }),
-    ]);
-    await db.auditLog.create({
-      data: {
-        action: "EXPIRED_OPERATIONAL_DATA_CLEANED",
-        entityType: "System",
-        metadata: {
-          rateLimitBuckets: rateLimits.count,
-          adminSessions: sessions.count,
-          cutoff: now.toISOString(),
-        },
-      },
-    });
-    console.log(
-      `${rateLimits.count} rate-limit ve ${sessions.count} eski oturum kaydı silindi.`,
+    throw new Error("Silme için CONFIRM_PRIVACY_CLEANUP=yes zorunludur.");
+  }
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) throw new Error("DATABASE_URL zorunludur.");
+  const auditRetentionDays = Number(process.env.AUDIT_RETENTION_DAYS ?? 365);
+  if (!Number.isInteger(auditRetentionDays) || auditRetentionDays < 30) {
+    throw new Error(
+      "AUDIT_RETENTION_DAYS en az 30 olan bir tam sayı olmalıdır.",
     );
   }
-} finally {
-  await db.$disconnect();
+  const { cleanupExpiredPrivacyData } =
+    await import("../server/privacy/cleanup");
+  const db = adminDb(databaseUrl);
+  try {
+    const counts = await cleanupExpiredPrivacyData(db, {
+      auditRetentionDays,
+    });
+    console.log("Süresi dolmuş gizlilik verileri temizlendi:", counts);
+  } finally {
+    await db.$disconnect();
+  }
 }
+
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : "Temizlik başarısız.");
+  process.exitCode = 1;
+});
