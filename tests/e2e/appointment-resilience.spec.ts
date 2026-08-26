@@ -83,6 +83,73 @@ test("keeps the encrypted package retryable while offline", async ({
   }
 });
 
+test("recovers an in-flight encrypted submission without creating a duplicate", async ({
+  context,
+  page,
+}) => {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) throw new Error("DATABASE_URL is required for this test.");
+  const pool = new Pool({
+    connectionString: databaseUrl,
+    allowExitOnIdle: true,
+  });
+  const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
+  let requestId: string | undefined;
+  let interrupted = false;
+
+  try {
+    await page.goto("/iletisim");
+    await page.getByLabel("Ad soyad").fill("E2E Yarım Kalan Gönderim");
+    await page.getByLabel("E-posta").fill("in-flight-retry@example.test");
+    await page.getByLabel(/KVKK aydınlatma metnini/).check();
+    await page.waitForTimeout(1_600);
+    await page
+      .getByRole("button", {
+        name: "Şifrele ve kurtarma belgesini hazırla",
+      })
+      .click();
+
+    const downloadPromise = page.waitForEvent("download");
+    await page
+      .getByRole("button", { name: "Kurtarma dosyasını indir" })
+      .click();
+    const recoveryPath = await (await downloadPromise).path();
+    if (!recoveryPath) throw new Error("Recovery download could not be read.");
+    const recovery = validateRecoveryV1(
+      JSON.parse(await readFile(recoveryPath, "utf8")),
+    );
+    requestId = recovery.requestId;
+    await page.getByLabel(/Kurtarma belgesini iki ayrı güvenli kopya/).check();
+
+    page.on("request", (request) => {
+      if (interrupted || request.method() !== "POST") return;
+      interrupted = true;
+      void context.setOffline(true);
+    });
+
+    await page.getByRole("button", { name: "Şifreli talebi gönder" }).click();
+    await expect.poll(() => interrupted).toBe(true);
+    await expect(
+      page.getByRole("heading", { name: "Kurtarma belgenizi saklayın" }),
+    ).toBeVisible();
+
+    await context.setOffline(false);
+    await expect(
+      page.getByText("Anonim talebiniz alındı", { exact: true }).first(),
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(
+      prisma.appointmentRequest.count({ where: { requestId } }),
+    ).resolves.toBe(1);
+  } finally {
+    await context.setOffline(false);
+    if (requestId) {
+      await prisma.appointmentRequest.deleteMany({ where: { requestId } });
+    }
+    await prisma.$disconnect();
+    await pool.end();
+  }
+});
+
 test("rejects an obsolete recovery schema without sending a request", async ({
   page,
 }) => {

@@ -17,6 +17,7 @@ const serverEnvSchema = z.object({
   EMAIL_FROM: optionalSecret,
   AUTH_SECRET: optionalSecret.pipe(z.string().min(32).optional()),
   TRACKING_HMAC_KEY_V1: optionalSecret.pipe(z.string().min(32).optional()),
+  MFA_ENCRYPTION_KEY: optionalSecret,
   ADMIN_SESSION_HOURS: z.coerce.number().int().min(1).max(24).default(8),
   APPOINTMENT_RETENTION_DAYS: z.coerce
     .number()

@@ -50,6 +50,8 @@ model AdminUser {
   isActive          Boolean                    @default(true)
   lastLoginAt       DateTime?                  @db.Timestamptz(3)
   passwordChangedAt DateTime?                  @db.Timestamptz(3)
+  mfaSecretEncrypted String?                    @db.Text
+  mfaEnabledAt       DateTime?                  @db.Timestamptz(3)
   createdAt         DateTime                   @default(now()) @db.Timestamptz(3)
   updatedAt         DateTime                   @updatedAt @db.Timestamptz(3)
   articles          Article[]
