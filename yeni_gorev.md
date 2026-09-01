@@ -4,6 +4,7 @@ Son güncelleme: 27 Ağustos 2026
 
 ## Hazır olanlar
 
+- [x] Canlı öncesi taslak ve eksik içerik denetimi
 - [x] Şifreli randevu, anonim takip ve admin paneli
 - [x] PostgreSQL/Prisma ve veri temizleme sistemi
 - [x] MFA, güvenlik kontrolleri ve korumalı cron endpoint'leri
@@ -14,7 +15,9 @@ Son güncelleme: 27 Ağustos 2026
 
 ### 1. İçerik ve hukuk
 
-- [ ] Gerçek biyografi, hizmet ve iletişim bilgilerini gir
+- [ ] Gerçek biyografi, hizmet ve iletişim bilgilerini klinik sahibinden al
+- [ ] Onaylı portre/klinik görsellerini al
+- [ ] Doğrulanmış bilgileri siteye gir
 - [ ] Taslak/örnek içerikleri kaldır
 - [ ] KVKK, gizlilik, çerez ve saklama sürelerini hukukçuya onaylat
 - [ ] Çocuk/veli/onam prosedürünü kesinleştir
