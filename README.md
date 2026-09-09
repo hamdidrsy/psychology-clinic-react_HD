@@ -31,11 +31,11 @@ npm.cmd run audit
 npm.cmd run security:secrets
 ```
 
-`npm run production:check`, canlı ortam değişkenlerini değerlerini ekrana yazdırmadan denetler. Vercel build’i bu kontrol geçmeden başlamaz.
+`npm run production:check`, canlı ortam değişkenlerini değerlerini ekrana yazdırmadan denetler. Railway build komutu bu kontrolü build’den önce çalıştırmalıdır.
 
 ## Canlı ortam değişkenleri
 
-Tam liste `.env.example` içindedir. Vercel’de Preview ve Production değerlerini ayrı girin; secret’ları repoya veya destek mesajına koymayın.
+Tam liste `.env.example` içindedir. Railway’de Staging ve Production değerlerini ayrı girin; secret’ları repoya veya destek mesajına koymayın.
 
 - `NEXT_PUBLIC_SITE_URL`: HTTPS canonical site adresi.
 - `DATABASE_URL`: Uygulamanın kısıtlı yetkili, tercihen pooled PostgreSQL bağlantısı.
@@ -44,7 +44,7 @@ Tam liste `.env.example` içindedir. Vercel’de Preview ve Production değerler
 - `MFA_ENCRYPTION_KEY`: Base64URL biçiminde 32 rastgele bayt.
 - `RESEND_API_KEY`, `APPOINTMENT_NOTIFICATION_TO`, `EMAIL_FROM`: Doğrulanmış Resend alanına ait değerler.
 - `APPOINTMENT_RETENTION_DAYS`, `AUDIT_RETENTION_DAYS`, `ADMIN_SESSION_HOURS`: Onaylanmış saklama/oturum süreleri.
-- `TRUST_PROXY_HEADERS=true`: Vercel’de güvenilir proxy başlıklarını kullanmak için.
+- `TRUST_PROXY_HEADERS=true`: Railway’in güvenilir proxy başlıklarını kullanmak için.
 
 PowerShell secret örneği:
 
@@ -56,22 +56,25 @@ $rng.GetBytes($bytes)
 $rng.Dispose()
 ```
 
-## Vercel’e alma sırası
+## Railway’e alma sırası
 
-1. Git deposunu Vercel Pro projesine bağlayın; Preview ortamını staging olarak kullanın. Bu ticari klinik ve 10 dakikalık bildirim cron’u Hobby sınırlarına uygun değildir.
-2. Preview ve Production için ayrılmış PostgreSQL veritabanları oluşturun; TLS zorunlu olsun.
-3. Ortam değişkenlerini ilgili Vercel ortamlarına girin.
-4. Önce Preview deploy edin; migration için o ortamda `npm run prisma:migrate:deploy` çalıştırın ve kabul testi yapın.
-5. Production veritabanının sağlayıcı yedeğini alın, migration’ı uygulayın, sonra production deploy edin.
-6. Alan adı/DNS/HTTPS ve Resend domain doğrulamasını tamamlayın; gerçek e-posta ve randevu yaşam döngüsü testi yapın.
+1. Railway projesi oluşturup GitHub deposunu web servisine bağlayın.
+2. Aynı projeye PostgreSQL ekleyin; web servisindeki `DATABASE_URL` ve migration bağlantısını referans değişkenlerle ayarlayın.
+3. Web servisinin Build Command alanına `npm run production:check && npm run build`, Pre-deploy Command alanına `npm run prisma:migrate:deploy`, Start Command alanına `npm run start` yazın.
+4. Healthcheck Path değerini `/api/health`, restart politikasını `ON_FAILURE` ve drain süresini en az 15 saniye yapın.
+5. Ortam değişkenlerini girip önce staging, ardından production deploy edin.
+6. Aynı GitHub deposundan `appointment-notifications` adlı cron servisi oluşturun. Start Command: `npm run cron:notifications`; Cron Schedule: `*/10 * * * *`.
+7. Aynı depodan `privacy-cleanup` adlı ikinci cron servisi oluşturun. Start Command: `npm run cron:privacy-cleanup`; Cron Schedule: `15 3 * * *`.
+8. İki cron servisine web servisinin HTTPS adresini `APP_URL`, aynı gizli değeri `CRON_SECRET` olarak girin. Cron servislerine public domain vermeyin.
+9. Alan adı/DNS/HTTPS ve Resend doğrulamasını tamamlayıp gerçek e-posta ve randevu yaşam döngüsü testi yapın.
 
-`vercel.json`, bildirim tekrarlarını 10 dakikada bir ve veri yaşam döngüsü temizliğini her gün 03:15 UTC’de çalıştırır. On dakikalık sıklık Pro plan gerektirir. Vercel, `CRON_SECRET` değerini Bearer başlığıyla yollar.
+Railway cron zamanları UTC’dir. Cron betikleri korumalı endpoint’i çağırır, sonucu kontrol eder ve işlem tamamlanınca kapanır.
 
 ## Yedekleme, geri yükleme ve geri alma
 
 - Sağlayıcıda günlük otomatik yedek/PITR açın; saklama süresini KVKK kararına göre belirleyin.
 - Ayda bir yedeği yalnız izole test veritabanına geri yükleyip migration ve temel akış testlerini çalıştırın. Canlı veritabanının üzerine deneme geri yüklemesi yapmayın.
-- Deploy sorunu varsa Vercel’den son sağlam deployment’a dönün. Migration geriye uyumlu değilse yalnız uygulamayı geri almak yeterli değildir; önce yedekten izole geri yükleme ve veri etkisi değerlendirmesi yapın.
+- Deploy sorunu varsa Railway’den son sağlam deployment’ı yeniden deploy edin. Migration geriye uyumlu değilse yalnız uygulamayı geri almak yeterli değildir; önce yedekten izole geri yükleme ve veri etkisi değerlendirmesi yapın.
 - Her canlı değişiklik öncesinde migration çıktısı, yedek zamanı, sağlam deployment kimliği ve geri alma sorumlusu kaydedilmelidir.
 
 Kalan işler kısa biçimde `yeni_gorev.md` dosyasında takip edilir.

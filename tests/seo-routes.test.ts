@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { GET as getHealth } from "@/app/api/health/route";
+
 const getPublishedArticles = vi.hoisted(() => vi.fn());
 vi.mock("@/server/articles/public", () => ({ getPublishedArticles }));
 
@@ -8,6 +10,13 @@ import sitemap from "@/app/sitemap";
 
 describe("SEO discovery routes", () => {
   beforeEach(() => getPublishedArticles.mockReset());
+
+  it("returns a no-store health response for Railway", async () => {
+    const response = getHealth();
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store, max-age=0");
+    await expect(response.json()).resolves.toEqual({ status: "ok" });
+  });
 
   it("allows public pages and excludes the admin area in robots", () => {
     const result = robots();

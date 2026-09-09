@@ -8,20 +8,20 @@ Son güncelleme: 9 Eylül 2026
 - [x] Şifreli randevu, takip ve admin paneli
 - [x] Prisma şeması, migration'lar ve temizlik sistemi
 - [x] MFA, rate limiting, bot ve cron koruması
-- [x] Vercel ve production ortam kontrolleri
+- [x] Railway sağlık, cron ve production ortam kontrolleri
 - [x] Otomatik testler, build ve güvenlik taramaları
 - [x] Kritik Next.js güvenlik güncellemesi
 
 ## Canlıya alırken senin yapacakların
 
-- [ ] Vercel Pro projesini oluştur
+- [ ] Railway projesini oluştur
 - [ ] Production PostgreSQL veritabanını oluştur
-- [ ] Vercel ortam değişkenlerini gir
+- [ ] Railway ortam değişkenlerini gir
 - [ ] Production migration'ı çalıştır
 - [ ] Admin hesabını oluştur ve MFA kur
 - [ ] Resend alan adını doğrula
 - [ ] Alan adı, DNS ve HTTPS bağlantısını yap
-- [ ] Vercel production deployment'ı başlat
+- [ ] Railway production deployment'ı başlat
 - [ ] Veritabanı otomatik yedeklemesini aç
 - [ ] Canlı randevu ve e-posta testi yap
 

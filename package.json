@@ -31,6 +31,8 @@
     "appointments:purge-expired": "tsx scripts/purge-expired-appointments.ts",
     "appointments:audit-privacy": "tsx scripts/audit-appointment-privacy.ts",
     "privacy:cleanup-expired": "tsx scripts/cleanup-expired-operational-data.ts",
+    "cron:notifications": "node scripts/trigger-cron.mjs appointment-notifications",
+    "cron:privacy-cleanup": "node scripts/trigger-cron.mjs privacy-cleanup",
     "prisma:generate": "prisma generate",
     "prisma:format": "prisma format",
     "prisma:validate": "prisma validate",

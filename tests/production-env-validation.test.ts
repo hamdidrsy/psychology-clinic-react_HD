@@ -51,14 +51,23 @@ describe("production environment validation", () => {
     expect(errors.join(" ")).not.toContain(reused);
   });
 
-  it("requires trusted proxy handling on Vercel", () => {
+  it("requires trusted proxy handling on managed hosting", () => {
     const errors = getProductionEnvironmentErrors({
       ...validEnvironment,
       VERCEL: "1",
       TRUST_PROXY_HEADERS: "false",
     });
     expect(errors).toContain(
-      "Vercel ortamında TRUST_PROXY_HEADERS=true olmalı.",
+      "Vercel/Railway ortamında TRUST_PROXY_HEADERS=true olmalı.",
+    );
+
+    const railwayErrors = getProductionEnvironmentErrors({
+      ...validEnvironment,
+      RAILWAY_ENVIRONMENT: "production",
+      TRUST_PROXY_HEADERS: "false",
+    });
+    expect(railwayErrors).toContain(
+      "Vercel/Railway ortamında TRUST_PROXY_HEADERS=true olmalı.",
     );
   });
 });

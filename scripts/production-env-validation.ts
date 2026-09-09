@@ -126,8 +126,11 @@ export function getProductionEnvironmentErrors(env: NodeJS.ProcessEnv) {
     if (!Number.isInteger(days) || days < 1 || days > 3650)
       errors.push(`${name} 1-3650 arasında tam sayı olmalı.`);
   }
-  if (env.VERCEL && env.TRUST_PROXY_HEADERS !== "true") {
-    errors.push("Vercel ortamında TRUST_PROXY_HEADERS=true olmalı.");
+  if (
+    (env.VERCEL || env.RAILWAY_ENVIRONMENT) &&
+    env.TRUST_PROXY_HEADERS !== "true"
+  ) {
+    errors.push("Vercel/Railway ortamında TRUST_PROXY_HEADERS=true olmalı.");
   }
 
   return errors;
