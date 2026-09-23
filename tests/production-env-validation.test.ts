@@ -36,6 +36,18 @@ describe("production environment validation", () => {
     expect(errors.join(" ")).toMatch(/yerel veritabanını|sslmode|farklı/);
   });
 
+  it("accepts Railway's private Postgres reference without a public database URL", () => {
+    const errors = getProductionEnvironmentErrors({
+      ...validEnvironment,
+      RAILWAY_ENVIRONMENT_NAME: "production",
+      DATABASE_URL:
+        "postgresql://postgres:strong-password@postgres.railway.internal:5432/railway",
+      DIRECT_DATABASE_URL: undefined,
+      TRUST_PROXY_HEADERS: "true",
+    });
+    expect(errors).toEqual([]);
+  });
+
   it("rejects missing and reused secrets without exposing their values", () => {
     const reused = "same-production-value-which-is-long-enough";
     const errors = getProductionEnvironmentErrors({
@@ -63,7 +75,7 @@ describe("production environment validation", () => {
 
     const railwayErrors = getProductionEnvironmentErrors({
       ...validEnvironment,
-      RAILWAY_ENVIRONMENT: "production",
+      RAILWAY_ENVIRONMENT_NAME: "production",
       TRUST_PROXY_HEADERS: "false",
     });
     expect(railwayErrors).toContain(

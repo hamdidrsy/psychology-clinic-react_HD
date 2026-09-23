@@ -26,8 +26,12 @@ function validateDatabaseUrl(
   name: string,
   value: string | undefined,
   errors: string[],
+  options: { allowRailwayPrivate?: boolean; required?: boolean } = {},
 ) {
-  if (!value) return errors.push(`${name} eksik.`);
+  if (!value) {
+    if (options.required !== false) errors.push(`${name} eksik.`);
+    return;
+  }
   try {
     const url = new URL(value);
     if (!postgresProtocols.has(url.protocol))
@@ -36,7 +40,12 @@ function validateDatabaseUrl(
       errors.push(`${name} yerel veritabanını gösteremez.`);
     if (!url.username || !url.password)
       errors.push(`${name} kullanıcı adı ve parola içermeli.`);
-    if (!secureSslModes.has(url.searchParams.get("sslmode") ?? "")) {
+    const isRailwayPrivate =
+      options.allowRailwayPrivate && url.hostname.endsWith(".railway.internal");
+    if (
+      !isRailwayPrivate &&
+      !secureSslModes.has(url.searchParams.get("sslmode") ?? "")
+    ) {
       errors.push(
         `${name} sslmode=require, verify-ca veya verify-full kullanmalı.`,
       );
@@ -59,9 +68,17 @@ function validateSecret(
 
 export function getProductionEnvironmentErrors(env: NodeJS.ProcessEnv) {
   const errors: string[] = [];
+  const isRailway = Boolean(
+    env.RAILWAY_ENVIRONMENT_NAME || env.RAILWAY_PROJECT_ID,
+  );
   validateSiteUrl(env.NEXT_PUBLIC_SITE_URL, errors);
-  validateDatabaseUrl("DATABASE_URL", env.DATABASE_URL, errors);
-  validateDatabaseUrl("DIRECT_DATABASE_URL", env.DIRECT_DATABASE_URL, errors);
+  validateDatabaseUrl("DATABASE_URL", env.DATABASE_URL, errors, {
+    allowRailwayPrivate: isRailway,
+  });
+  validateDatabaseUrl("DIRECT_DATABASE_URL", env.DIRECT_DATABASE_URL, errors, {
+    allowRailwayPrivate: isRailway,
+    required: !isRailway,
+  });
 
   if (env.DATABASE_URL && env.DATABASE_URL === env.DIRECT_DATABASE_URL) {
     errors.push(
@@ -126,10 +143,7 @@ export function getProductionEnvironmentErrors(env: NodeJS.ProcessEnv) {
     if (!Number.isInteger(days) || days < 1 || days > 3650)
       errors.push(`${name} 1-3650 arasında tam sayı olmalı.`);
   }
-  if (
-    (env.VERCEL || env.RAILWAY_ENVIRONMENT) &&
-    env.TRUST_PROXY_HEADERS !== "true"
-  ) {
+  if ((env.VERCEL || isRailway) && env.TRUST_PROXY_HEADERS !== "true") {
     errors.push("Vercel/Railway ortamında TRUST_PROXY_HEADERS=true olmalı.");
   }
 
