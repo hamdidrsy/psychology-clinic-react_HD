@@ -21,7 +21,14 @@ const staticPages = [
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const databaseArticles = await getPublishedArticles();
+  let databaseArticles: Awaited<ReturnType<typeof getPublishedArticles>> = [];
+  try {
+    databaseArticles = await getPublishedArticles();
+  } catch {
+    console.error("Sitemap database articles unavailable", {
+      failureCode: "DATABASE_UNAVAILABLE",
+    });
+  }
   const staticSlugs = new Set(articles.map((article) => article.slug));
   return [
     ...staticPages.map((path, index) => ({

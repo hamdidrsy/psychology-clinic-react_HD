@@ -1,6 +1,6 @@
 # Kalan Görevler
 
-Son güncelleme: 9 Eylül 2026
+Son güncelleme: 23 Eylül 2026
 
 ## Teknik olarak hazır
 
@@ -14,14 +14,14 @@ Son güncelleme: 9 Eylül 2026
 
 ## Canlıya alırken senin yapacakların
 
-- [ ] Railway projesini oluştur
-- [ ] Production PostgreSQL veritabanını oluştur
+- [x] Railway projesini oluştur
+- [x] Production PostgreSQL veritabanını oluştur
 - [ ] Railway ortam değişkenlerini gir
 - [ ] Production migration'ı çalıştır
 - [ ] Admin hesabını oluştur ve MFA kur
 - [ ] Resend alan adını doğrula
 - [ ] Alan adı, DNS ve HTTPS bağlantısını yap
-- [ ] Railway production deployment'ı başlat
+- [x] Railway production deployment'ı başlat
 - [ ] Veritabanı otomatik yedeklemesini aç
 - [ ] Canlı randevu ve e-posta testi yap
 
