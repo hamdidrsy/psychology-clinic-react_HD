@@ -1,7 +1,11 @@
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 
-const port = process.env.PORT ?? "3000";
+const port =
+  process.env.PORT ??
+  (process.env.RAILWAY_ENVIRONMENT_NAME || process.env.RAILWAY_PROJECT_ID
+    ? "8080"
+    : "3000");
 const parsedPort = Number(port);
 
 if (!Number.isInteger(parsedPort) || parsedPort < 1 || parsedPort > 65_535) {
