@@ -17,7 +17,7 @@ Son güncelleme: 23 Eylül 2026
 - [x] Railway projesini oluştur
 - [x] Production PostgreSQL veritabanını oluştur
 - [ ] Railway ortam değişkenlerini gir
-- [ ] Production migration'ı çalıştır
+- [x] Production migration'ı çalıştır
 - [ ] Admin hesabını oluştur ve MFA kur
 - [ ] Resend alan adını doğrula
 - [ ] Alan adı, DNS ve HTTPS bağlantısını yap
@@ -29,7 +29,7 @@ Son güncelleme: 23 Eylül 2026
 
 - [ ] Cron, log ve hata kayıtlarını kontrol et
 - [ ] Mobil ve masaüstü canlı site testi yap
-- [ ] SEO, sitemap, robots ve HTTPS kontrolü yap
+- [x] SEO, sitemap, robots ve HTTPS kontrolü yap
 - [ ] Yedekten geri yükleme ve rollback testi yap
 
 ## Sonraya bırakıldı — içerik ve hukuk
