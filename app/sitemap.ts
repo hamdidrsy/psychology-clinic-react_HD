@@ -4,6 +4,9 @@ import { articles, services } from "@/lib/content";
 import { absoluteUrl } from "@/lib/seo";
 import { getPublishedArticles } from "@/server/articles/public";
 
+// Railway's private network is available at runtime, not while the image builds.
+export const dynamic = "force-dynamic";
+
 const staticPages = [
   "/",
   "/hakkimda",
