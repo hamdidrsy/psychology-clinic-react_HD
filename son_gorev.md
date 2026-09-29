@@ -51,7 +51,7 @@
 - [ ] Gizlilik ve süre dolumu temizleme cron görevini çalıştır.
 - [ ] Cron isteklerinin doğru `CRON_SECRET` kullandığını doğrula.
 - [ ] Railway loglarında hata bulunmadığını kontrol et.
-- [ ] `/api/health` adresinin `200` döndürdüğünü doğrula.
+- [x] `/api/health` adresinin `200` döndürdüğünü doğrula.
 - [ ] Hata durumunda rollback işlemini test et.
 
 ## 7. Gerçek içerikler
